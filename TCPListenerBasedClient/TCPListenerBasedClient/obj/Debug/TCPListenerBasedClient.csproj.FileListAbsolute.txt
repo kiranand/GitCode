@@ -4,3 +4,6 @@ c:\users\anand\documents\visual studio 2013\Projects\TCPListenerBasedClient\TCPL
 c:\users\anand\documents\visual studio 2013\Projects\TCPListenerBasedClient\TCPListenerBasedClient\bin\Debug\TCPListenerBasedClient.pdb
 c:\users\anand\documents\visual studio 2013\Projects\TCPListenerBasedClient\TCPListenerBasedClient\obj\Debug\TCPListenerBasedClient.exe
 c:\users\anand\documents\visual studio 2013\Projects\TCPListenerBasedClient\TCPListenerBasedClient\obj\Debug\TCPListenerBasedClient.pdb
+C:\Users\anand\Documents\GitCode\TCPListenerBasedClient\TCPListenerBasedClient\bin\Debug\TCPListenerBasedClient.exe.config
+C:\Users\anand\Documents\GitCode\TCPListenerBasedClient\TCPListenerBasedClient\obj\Debug\TCPListenerBasedClient.exe
+C:\Users\anand\Documents\GitCode\TCPListenerBasedClient\TCPListenerBasedClient\obj\Debug\TCPListenerBasedClient.pdb
