@@ -8,13 +8,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 
-namespace Outstation_1
+namespace FormBasedTCPListenOutstation
 {
-    class Program
+    class TCPListen
     {
-        public class AsyncService
-        {
-            private async Task Process(TcpClient tcpClient)
+        private async Task Process(TcpClient tcpClient)
             {
                 //string clientEndPoint =
                 //tcpClient.Client.RemoteEndPoint.ToString();
@@ -33,6 +31,7 @@ namespace Outstation_1
                     while (true)
                     {
                         string request = await reader.ReadLineAsync();
+                        Console.WriteLine("Waiting for client data");
                         if (request != null)
                         {
                             Console.WriteLine("Received service request: " + request);
@@ -59,12 +58,10 @@ namespace Outstation_1
             public async void Run()
             {
                 IPAddress self = IPAddress.Parse("192.168.1.101");
-                TcpListener listener = new TcpListener(self, 50000);
-                listener.Start();
+                TcpListener listener = new TcpListener(IPAddress.Any, 50000);
+                listener.Start(); 
                 Console.Write("Array Min and Avg service is now running");
                 Console.WriteLine(" on port " + 50000);
-                Console.WriteLine("Hit <enter> to stop service\n");
-                Console.Title = "Outstation-Server";
                 while (true)
                 {
                     try
@@ -88,22 +85,5 @@ namespace Outstation_1
             }
             
         }
-
-        static void Main(string[] args)
-        {
-            try
-            {
-                AsyncService service = new AsyncService();
-                service.Run();
-                Console.ReadLine();
-                 
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                Console.ReadLine();
-            }
-        }   
-
     }
-}
+

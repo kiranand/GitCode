@@ -19,7 +19,7 @@ namespace DNPMaster_1
             {
                 try
                 {
-                    IPAddress ipAddress = IPAddress.Loopback;  
+                    IPAddress ipAddress = IPAddress.Parse("192.168.1.101");  
                 
                     TcpClient client = new TcpClient();
                     await client.ConnectAsync(ipAddress, 50000); // Connect
