@@ -12,14 +12,18 @@ namespace FormBasedTCPListenMaster
 {
     public class TCPClient
     {
-        public async Task<string> SendRequest(string data)
+        IPAddress OutstationIPAddr;
+
+        public async Task<string> SendRequest(string data, IPAddress addr)
         {
             try
             {
-                IPAddress ipAddress = IPAddress.Parse("192.168.1.101");
-
+                //IPAddress ipAddress = IPAddress.Parse("192.168.1.123"); 
+                //this is the IP address of the Client or Slave running on another computer which is listening on port 50000
+                //we need to connect to it and ask for information
+                Console.WriteLine();
                 TcpClient client = new TcpClient();
-                await client.ConnectAsync(ipAddress, 50000); // Connect
+                await client.ConnectAsync(addr, 50000); // Connect
                 NetworkStream networkStream = client.GetStream();
                 StreamWriter writer = new StreamWriter(networkStream);
                 StreamReader reader = new StreamReader(networkStream);
@@ -31,6 +35,7 @@ namespace FormBasedTCPListenMaster
             }
             catch (Exception ex)
             {
+
                 return ex.Message;
             }
         }
