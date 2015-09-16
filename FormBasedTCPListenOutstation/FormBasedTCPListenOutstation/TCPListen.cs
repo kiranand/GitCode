@@ -34,24 +34,7 @@ namespace FormBasedTCPListenOutstation
                 StreamReader reader = new StreamReader(networkStream);
                 StreamWriter writer = new StreamWriter(networkStream);
                 writer.AutoFlush = true;
-                /*while (true)
-                {
-                    string msgRcvd = await reader.ReadLineAsync();
-                    Console.WriteLine("Waiting for client data");
-                    if (msgRcvd != null)
-                    {
-                        Console.WriteLine("Received service request: " + msgRcvd);
-                        msgFromClient = string.Copy(msgRcvd);
-                        //string response = Response(request);
-                        Console.WriteLine("Computed response is: " + msgRcvd + "\n");
-
-                        await writer.WriteLineAsync(msgRcvd);
-                    }
-                    else
-                             
-                        break; // Client closed connection
-                }*/
-
+               
                 while (true)
                 {
                     amountRead = await networkStream.ReadAsync(dataRead, 0, dataRead.Length, ct);
