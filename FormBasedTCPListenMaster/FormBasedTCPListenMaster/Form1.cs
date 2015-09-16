@@ -23,10 +23,11 @@ namespace FormBasedTCPListenMaster
             client = new TCPClient();
         }
 
-       private static Task<string> runClientAsync(string msg, IPAddress addr)
+       private static Task<string> runClientAsync(byte[] msg, IPAddress addr)
         {
+            CancellationToken ct;
            
-            Task<string> tsResponse = client.SendRequest(msg, addr);
+            Task<string> tsResponse = client.SendRequest(msg, addr, ct);
            
             return (tsResponse);
         }
@@ -54,10 +55,10 @@ namespace FormBasedTCPListenMaster
             List<byte> dnpPkt = new List<byte>();
             buildPkt(ref dnpPkt);
             byte[] msgBytes = dnpPkt.ToArray();
-            
-            string msg = BitConverter.ToString(msgBytes);
-            Console.WriteLine(msg); 
-            string response = await runClientAsync(msg, addr);
+
+            //string msg = BitConverter.ToString(msgBytes);
+            //Console.WriteLine(msg); 
+            string response = await runClientAsync(msgBytes, addr);
         }
 
         public void buildPkt(ref List<byte> dnpPkt)

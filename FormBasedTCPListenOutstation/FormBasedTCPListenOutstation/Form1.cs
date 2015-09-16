@@ -22,12 +22,12 @@ namespace FormBasedTCPListenOutstation
             InitializeComponent();
         }
 
-        private async void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e)
         {
             try
             {
-                string msgRcvd = await service.Run();
-                textBox1.Text += msgRcvd;
+                service.Run();
+                //textBox1.Text += msgRcvd;
 
             }
             catch (Exception ex)
