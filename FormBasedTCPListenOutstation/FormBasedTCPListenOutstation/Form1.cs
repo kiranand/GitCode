@@ -12,7 +12,7 @@ using System.Net.Sockets;
 
 namespace FormBasedTCPListenOutstation
 {
-    public delegate void workerFunctionDelegate(byte[] msg);
+  
 
     public partial class Form1 : Form
     {
@@ -20,7 +20,7 @@ namespace FormBasedTCPListenOutstation
 
         public Form1()
         {
-
+            
             service = new TCPListen();
             InitializeComponent();
         }
@@ -29,7 +29,7 @@ namespace FormBasedTCPListenOutstation
         {
             try
             {
-                 service.Run(textBox1);
+                 service.Run(textBox1, radioButton1, radioButton2, radioButton3);
                 Console.Write("running GUI");
 
             }
