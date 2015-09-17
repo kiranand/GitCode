@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Threading;
+using System.Threading; 
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
+using System.Windows.Forms;
+ 
 
 namespace FormBasedTCPListenOutstation
 {
@@ -15,9 +17,8 @@ namespace FormBasedTCPListenOutstation
         string msgFromClient = "No Data Yet";
         int amountRead = 0;
         bool dataRcvd = false;
-        byte[] dataRead = new byte[100];
-
-        private async void ProcessAsync(TcpClient tcpClient, CancellationToken ct)
+        byte[] dataRead = new byte[100]; 
+        private async void ProcessAsync(TcpClient tcpClient, CancellationToken ct, TextBox txBx)
         {
             //string clientEndPoint =
             //tcpClient.Client.RemoteEndPoint.ToString();
@@ -41,14 +42,20 @@ namespace FormBasedTCPListenOutstation
 
                     if (amountRead <= 0)
                     {
+                       
                         break;
                         
                     }
-                    
-                    msgFromClient = BitConverter.ToString(dataRead);
-                    Console.WriteLine("Received service request: " + msgFromClient); 
+
+                  
+                    msgFromClient = BitConverter.ToString(dataRead,0,amountRead);
+
+                    /*m_TextBox.Invoke(new UpdateTextCallback(this.UpdateText),new object[]{”Text generated on non-UI thread.”});
+                     * */
+
+                    txBx.Text += msgFromClient;
+                 
                     networkStream.Flush();
-                        
                     //
                     // Client closed connection 
                 }
@@ -58,14 +65,14 @@ namespace FormBasedTCPListenOutstation
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                if (tcpClient.Connected)
+                if (tcpClient.Connected) 
                     tcpClient.Close(); 
             }
         }
 
 
 
-            public async void Run()
+            public async void Run(TextBox txtBx)
             {
                 CancellationToken ct;
                 IPAddress self = IPAddress.Parse("127.0.0.1"); 
@@ -81,7 +88,7 @@ namespace FormBasedTCPListenOutstation
                     { 
                         Console.WriteLine("Run");
                         TcpClient tcpClient = await listener.AcceptTcpClientAsync();
-                        ProcessAsync(tcpClient, ct); 
+                        ProcessAsync(tcpClient, ct, txtBx); 
                     }
                     catch (Exception ex)
                     {

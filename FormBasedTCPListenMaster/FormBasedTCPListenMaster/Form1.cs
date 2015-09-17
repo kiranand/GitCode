@@ -23,7 +23,7 @@ namespace FormBasedTCPListenMaster
             client = new TCPClient();
         }
 
-       private static Task<string> runClientAsync(byte[] msg, IPAddress addr)
+       private static Task<string> runClientWriteAsync(byte[] msg, IPAddress addr)
         {
             CancellationToken ct;
            
@@ -32,6 +32,14 @@ namespace FormBasedTCPListenMaster
             return (tsResponse);
         }
 
+       private static Task<string> runClientReadAsync(byte[] msg, IPAddress addr)
+       {
+           CancellationToken ct;
+
+           Task<string> tsResponse = client.ReadRequest(msg, addr);
+
+           return (tsResponse);
+       }
         private void btnStartMaster_Click(object sender, EventArgs e)
         {
             
@@ -45,8 +53,13 @@ namespace FormBasedTCPListenMaster
                 textBox1.Text += reply;
             }*/
 
-            textBox1.Text += "Master Started" + Environment.NewLine;
+            textBox1.Text += "Master Started" + Environment.NewLine; 
         }
+
+
+      
+
+
 
         private async void btnWriteData_Click(object sender, EventArgs e)
         {
@@ -58,7 +71,7 @@ namespace FormBasedTCPListenMaster
 
             //string msg = BitConverter.ToString(msgBytes);
             //Console.WriteLine(msg); 
-            string response = await runClientAsync(msgBytes, addr);
+            string response = await runClientWriteAsync(msgBytes, addr);
         }
 
         public void buildPkt(ref List<byte> dnpPkt)

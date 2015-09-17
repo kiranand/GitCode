@@ -43,16 +43,48 @@ namespace FormBasedTCPListenMaster
                 return (dataRead.ToString());
             }
 
-                /*
-                 * while (!ct.IsCancellationRequested)
-        {
-            var amountRead = await stream.ReadAsync(buf, 0, buf.Length, ct);
-            Logger.Info("Receive " + stream.ToString());
-            if (amountRead == 0) break; //end of stream.
-            await stream.WriteAsync(buf, 0, amountRead, ct);
-            Logger.Info("Echo to client");
+              
+            catch (Exception ex)
+            {
+
+                return ex.Message;
+            }
         }
-                 * */
+
+
+
+
+        public async Task<string> ReadRequest(byte[] data, IPAddress addr)
+        {
+            byte[] dataRead = new byte[100];
+            try
+            {
+                //IPAddress ipAddress = IPAddress.Parse("192.168.1.123"); 
+                //this is the IP address of the Client or Slave running on another computer which is listening on port 50000
+                //we need to connect to it and ask for information
+                CancellationToken ct;
+                Console.WriteLine();
+                TcpClient client = new TcpClient();
+                await client.ConnectAsync(addr, 20000); // Connect
+                NetworkStream networkStream = client.GetStream();
+                StreamWriter writer = new StreamWriter(networkStream);
+                StreamReader reader = new StreamReader(networkStream);
+                writer.AutoFlush = true;
+                //await writer.WriteLineAsync(data);
+                //string response = await reader.ReadLineAsync();
+                while (true)
+                {
+
+                    var amountRead = await networkStream.ReadAsync(dataRead, 0, dataRead.Length, ct);
+                    Thread.Sleep(500);
+                }
+
+                client.Close();
+                //return response;
+                return (dataRead.ToString());
+            }
+
+
             catch (Exception ex)
             {
 

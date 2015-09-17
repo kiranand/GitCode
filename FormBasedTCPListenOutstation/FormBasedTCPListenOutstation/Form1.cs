@@ -7,10 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Net;
+using System.Net.Sockets;
 
 namespace FormBasedTCPListenOutstation
 {
-   
+    public delegate void workerFunctionDelegate(byte[] msg);
+
     public partial class Form1 : Form
     {
         TCPListen service;
@@ -26,8 +29,8 @@ namespace FormBasedTCPListenOutstation
         {
             try
             {
-                 service.Run();
-                //textBox1.Text += msgRcvd;
+                 service.Run(textBox1);
+                Console.Write("running GUI");
 
             }
             catch (Exception ex)
