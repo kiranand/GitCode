@@ -35,7 +35,7 @@ namespace FormBasedTCPListenOutstation
             try
             {
                  service.Run(textBox1, radioButton1, radioButton2, radioButton3);
-                Console.Write("running GUI");
+                Console.Write("running GUI" + Environment.NewLine);
 
             }
             catch (Exception ex)
@@ -52,7 +52,7 @@ namespace FormBasedTCPListenOutstation
             {
                 await service.writeToClient("ABCD", textBox1, ct);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Console.WriteLine("service.writeToClient exception!");
             }

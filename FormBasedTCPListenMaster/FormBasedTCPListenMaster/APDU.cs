@@ -247,6 +247,10 @@ namespace FormBasedTCPListenMaster
                             }
                         }
                     }
+                    else if(functionCodeByte == (byte)functionCode.READ)
+                    {
+                       //nothing to do here
+                    }
 
 
                 }

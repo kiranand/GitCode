@@ -77,8 +77,9 @@ namespace FormBasedTCPListenMaster
             TPDU myTpdu = new TPDU();
             
             //params should be in the following order
-            //FIR-FIN-CON-UNS-SEQ(4), function, group, variation, prefixQualifier, [range] OR [start index, stop index]
-            myApdu.buildAPDU(ref dnpPkt, 0x00, 0x00, 0x02, 0x0A, 0x01, 0x00, 0x00, 0x02, 0x01, 0x01, 0x01);
+            //Confirm, Unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
+            //myApdu.buildAPDU(ref dnpPkt, 0x00, 0x00, 0x01, 0x0A, 0x01, 0x00, 0x00, 0x02, 0x01, 0x01, 0x01);
+            myApdu.buildAPDU(ref dnpPkt, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00, 0x02);
 
             myTpdu.buildTPDU(ref dnpPkt);
             

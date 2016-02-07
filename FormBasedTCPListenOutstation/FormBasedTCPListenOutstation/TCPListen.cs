@@ -169,13 +169,108 @@ namespace FormBasedTCPListenOutstation
             }
         }
 
+        public async Task sendReadData(byte[] msg)
+        {
+            Console.Write("sendReadData" + Environment.NewLine);
+            //string clientEndPoint =
+            //tcpClient.Client.RemoteEndPoint.ToString();  
+            string clientEndPoint = tcpClient.Client.RemoteEndPoint.ToString();
+            string localEndPoint = tcpClient.Client.LocalEndPoint.ToString();
+            //Console.WriteLine("Received connection request from " + clientEndPoint); 
+
+            Console.WriteLine("WriteToClient Local: " + localEndPoint);
+            Console.WriteLine("WriteToClient Remote: " + clientEndPoint);
+            TcpClient dataServer = new TcpClient();
+            await dataServer.ConnectAsync(((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address, 30000); // Connect 
+            NetworkStream networkStream = dataServer.GetStream();
+            StreamReader reader = new StreamReader(networkStream);
+            StreamWriter writer = new StreamWriter(networkStream);
+            writer.AutoFlush = true; 
+            CancellationToken ct;
+            try
+            {
+                Console.Write("Connected for SendReadData" + Environment.NewLine);
+
+
+                while (true)
+                {
+                    await networkStream.WriteAsync(msg, 0, msg.Length, ct);
+                }
+
+                dataServer.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                if (tcpClient.Connected)
+                    tcpClient.Close();
+            }
+        }
+
+        public async void processAPDURead(List<byte> apduPkt)
+        {
+            //We know this is a read, we need to find out what the indices are and return the values
+            //we also need to know the Group and Variation to perform the action
+            //we need to know the qualifier depending on this we make sense of the range values
+            APDU responseAPDU = new APDU(); //prepare to respond
+            TPDU responseTPDU = new TPDU();
+            DPDU responseDPDU = new DPDU();
+            List<byte> dnpResponse = new List<byte>();
+
+            Console.Write("processAPDURead" + Environment.NewLine);
+            FormBasedTCPListenOutstation.groupID group = (FormBasedTCPListenOutstation.groupID)apduPkt[2];  
+            FormBasedTCPListenOutstation.variationID var = (FormBasedTCPListenOutstation.variationID)apduPkt[3];  
+            FormBasedTCPListenOutstation.prefixAndRange prefixRange = (FormBasedTCPListenOutstation.prefixAndRange)apduPkt[4]; 
+
+            if (group == FormBasedTCPListenOutstation.groupID.G1)
+            { 
+                if (var == FormBasedTCPListenOutstation.variationID.V1)
+                {
+                    //this is a group 1 variation 1, report the state of one or more binary points
+                    //since this is a read function code, we need to return values of the binary points
+
+                    //now get the qualifier
+                    if (prefixRange == FormBasedTCPListenOutstation.prefixAndRange.IndexOneOctetObjectSize)
+                    {
+                        //this means range field contains one octet count of objects and
+                        //each object is preceded by its index
+
+                    }
+                    else if (prefixRange == FormBasedTCPListenOutstation.prefixAndRange.NoIndexOneOctetStartStop)
+                    {
+                        //this means objects are NOT preceded by an index but the range field contains
+                        //one start octet with start index value and one stop octet with stop index value
+                        //example 00-02-01-01-01  means start index is 00, end index is 02
+                        //index 00 = 01, index 01=01 index 02=01
+                        byte startIndex = apduPkt[5];
+                        byte stopIndex = apduPkt[6];  
+                      
+                        //params should be in the following order
+                        //Confirm, Unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
+                        responseAPDU.buildAPDU(ref dnpResponse, true, 0x00, 0x00, 0x81, (byte)group, (byte)var, (byte)prefixRange, startIndex, stopIndex, apdu.binaryOutput[0],
+                            apdu.binaryOutput[1], apdu.binaryOutput[2]);
+
+                        responseTPDU.buildTPDU(ref dnpResponse); 
+                        responseDPDU.buildDPDU(ref dnpResponse, 0xC4, 65519, 1); //dst=1, src=65519
+                        byte[] msgBytes = dnpResponse.ToArray();
+
+                        string msg = BitConverter.ToString(msgBytes);
+                        Console.WriteLine(msg); 
+                        await sendReadData(msgBytes); 
+                    }
+
+                }
+            }
+        }
+
+
         
         public async void processAPDUWrite(List<byte> apduPkt)
         {
             //We know this is a write, we need to find out what the indices are and values
             //we also need to know the Group and Variation to perform the action
             //we need to know the qualifier depending on this we make sense of the range values
-            
+            Console.Write("processAPDUWrite" + Environment.NewLine);
             FormBasedTCPListenOutstation.groupID group = (FormBasedTCPListenOutstation.groupID)apduPkt[2];
             FormBasedTCPListenOutstation.variationID var = (FormBasedTCPListenOutstation.variationID)apduPkt[3];
             FormBasedTCPListenOutstation.prefixAndRange prefixRange = (FormBasedTCPListenOutstation.prefixAndRange)apduPkt[4];
@@ -241,7 +336,7 @@ namespace FormBasedTCPListenOutstation
             //process the CTRL byte which is FIR:FIN:CON:UNS:SEQ
             //we are only interested in the CON bit since that is the only one we are using in an Outstation
             //SEQ is always zero 
-
+            Console.Write("processAPDU" + Environment.NewLine);
             byte control = apduPkt[0];
             byte confirmMask = 1 << 5;
             int unsolicitedMask = 1 << 4;
@@ -272,6 +367,7 @@ namespace FormBasedTCPListenOutstation
                     break;
 
                 case FormBasedTCPListenOutstation.functionCode.READ:
+                    processAPDURead(apduPkt);
                     break;
 
                 case FormBasedTCPListenOutstation.functionCode.SELECT:
@@ -284,8 +380,9 @@ namespace FormBasedTCPListenOutstation
             }
         }
 
-        public List<byte> processTPDU(List<byte> tpduPkt)
+        public async Task<List<byte>> processTPDU(List<byte> tpduPkt)
         {
+            Console.Write("processTPDU" + Environment.NewLine);
             List<byte> apduExtract = new List<byte>();
 
             if(tpduPkt.Count > 0)
@@ -305,7 +402,7 @@ namespace FormBasedTCPListenOutstation
         {
             //Demultiplex the bytes in msg into layers
             //start with extracting the DPDU
-
+            Console.Write("processClientMsgAsync" + Environment.NewLine);
             List<byte> dpduPkt = new List<byte>();
             List<byte> tpduPkt = new List<byte>();
             List<byte> apduPkt = new List<byte>();
@@ -315,13 +412,14 @@ namespace FormBasedTCPListenOutstation
                 Console.WriteLine("Error not a DNP3 pkt!");
             }
             tpduPkt = await processDPDU(msg);
-            apduPkt = processTPDU(tpduPkt);
+            apduPkt = await processTPDU(tpduPkt);
             processAPDU(apduPkt);
             return (dpduPkt);
         }
 
         public async Task<List<byte>> processDPDU(List<byte> dnpPkt)
         {
+            Console.Write("processDPDU" + Environment.NewLine);
             //Check the start bytes first
             List<byte> tpduExtract = new List<byte>();
 
@@ -354,7 +452,10 @@ namespace FormBasedTCPListenOutstation
                         {
                             byte[] crcBlock = dpdu.makeCRC(ref dnpPkt, 10, (dnpPkt.Count() - 3));
 
-                            if(crcBlock[0]==dnpPkt[21] && crcBlock[1]==dnpPkt[22])
+                            int crcIndex1 = dnpPkt.Count - 2;
+                            int crcIndex2 = dnpPkt.Count -1;
+
+                            if(crcBlock[0]==dnpPkt[crcIndex1] && crcBlock[1]==dnpPkt[crcIndex2])
                             {
                                 //we can now proceed with processing the data link function code
                                 Console.WriteLine("Datalink CRC correct!");
@@ -392,8 +493,8 @@ namespace FormBasedTCPListenOutstation
             TcpListener listener = new TcpListener(IPAddress.Any, 20000);
             listener.Start(); 
                 
-            Console.Write("Array Min and Avg service is now running");
-            Console.WriteLine(" on port " + 50000);
+            Console.Write("Array Min and Avg service is now running" );
+            Console.WriteLine(" on port " + 50000 + Environment.NewLine);
             while (true)
             {
                 try
