@@ -16,11 +16,11 @@ namespace FormBasedTCPListenMaster
 {
     public partial class Form1 : Form
     {
-        public static TCPClient client;
+        public static masterTCPClient client;
         public Form1()
         {
             InitializeComponent();
-            client = new TCPClient();
+            client = new masterTCPClient();
         }
 
        private static Task<string> runClientWriteAsync(byte[] msg, IPAddress addr)
@@ -54,11 +54,7 @@ namespace FormBasedTCPListenMaster
             }*/
 
             textBox1.Text += "Master Started" + Environment.NewLine; 
-        }
-
-
-      
-
+        } 
 
 
         private async void btnWriteData_Click(object sender, EventArgs e)
@@ -72,6 +68,7 @@ namespace FormBasedTCPListenMaster
             //string msg = BitConverter.ToString(msgBytes);
             //Console.WriteLine(msg); 
             string response = await runClientWriteAsync(msgBytes, addr);
+            textBox1.Text += response;
         }
 
         public void buildPkt(ref List<byte> dnpPkt)
@@ -94,6 +91,13 @@ namespace FormBasedTCPListenMaster
 
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
+
+        }
+
+        private void btnReadData_Click(object sender, EventArgs e)
+        {
+
+            client.listenForOutstations(textBox1);
 
         }
     }

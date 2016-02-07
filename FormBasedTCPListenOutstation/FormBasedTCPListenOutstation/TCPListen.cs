@@ -15,9 +15,12 @@ namespace FormBasedTCPListenOutstation
    
     class TCPListen
     {
+        TcpClient tcpClient = new TcpClient();
+
         RadioButton radio1, radio2, radio3;
         string msgFromClient = "No Data Yet";
         int amountRead = 0;
+        int amountWritten = 0;
         bool dataRcvd = false;
         byte[] dataRead = new byte[100];
         DPDU dpdu = new DPDU();
@@ -53,6 +56,7 @@ namespace FormBasedTCPListenOutstation
                         
                     }
 
+                    await networkStream.WriteAsync(dataRead, 0, dataRead.Length);
                   
                     msgFromClient = BitConverter.ToString(dataRead,0,amountRead);
 
@@ -125,37 +129,37 @@ namespace FormBasedTCPListenOutstation
         }
 
 
-        private async Task writeToClient(TcpClient tcpClient, CancellationToken ct, string msg)
+        public async Task writeToClient(string msg, TextBox txbx, CancellationToken ct)
         {
             //string clientEndPoint =
-            //tcpClient.Client.RemoteEndPoint.ToString();
-
+            //tcpClient.Client.RemoteEndPoint.ToString();  
             string clientEndPoint = tcpClient.Client.RemoteEndPoint.ToString();
             string localEndPoint = tcpClient.Client.LocalEndPoint.ToString();
             //Console.WriteLine("Received connection request from " + clientEndPoint); 
-            Console.WriteLine("Local: " + localEndPoint);
-            Console.WriteLine("Remote: " + clientEndPoint);
+           
+            Console.WriteLine("WriteToClient Local: " + localEndPoint);
+            Console.WriteLine("WriteToClient Remote: " + clientEndPoint);
+            TcpClient dataServer = new TcpClient();
+            //txbx.Text += "WriteToClient Local: " + localEndPoint;
+            txbx.Text += "WriteToClient Remote: " + ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address + Environment.NewLine;
+            await dataServer.ConnectAsync(((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address,30000); // Connect 
+            NetworkStream networkStream = dataServer.GetStream();
+            StreamReader reader = new StreamReader(networkStream);
+            StreamWriter writer = new StreamWriter(networkStream);
+            writer.AutoFlush = true;
+            byte[] msgToSend = new byte[] { 0xAA, 0xBB, 0xCC, 0xDD };
 
             try
             {
-                NetworkStream networkStream = tcpClient.GetStream();
-                StreamReader reader = new StreamReader(networkStream);
-                StreamWriter writer = new StreamWriter(networkStream);
-                writer.AutoFlush = true;
+                txbx.Text += "Connected";
 
-                amountRead = await networkStream.ReadAsync(dataRead, 0, dataRead.Length, ct);
-                //await networkStream.WriteAsync(dataToWrite, 0, dataToWrite.Length);
 
-                if (amountRead > 0)
+                while (!ct.IsCancellationRequested)
                 {
-                    msgFromClient = BitConverter.ToString(dataRead, 0, amountRead); 
-                    networkStream.Flush();
+                    await networkStream.WriteAsync(msgToSend, 0, msgToSend.Length, ct); 
                 }
 
-                //
-                // Client closed connection 
-
-               //tcpClient.Close();
+                dataServer.Close();
             }
             catch (Exception ex)
             {
@@ -165,7 +169,7 @@ namespace FormBasedTCPListenOutstation
             }
         }
 
-
+        
         public async void processAPDUWrite(List<byte> apduPkt)
         {
             //We know this is a write, we need to find out what the indices are and values
@@ -372,10 +376,7 @@ namespace FormBasedTCPListenOutstation
             }
 
             return (tpduExtract);
-        }
-
-       
-
+        } 
 
 
         public async void Run(TextBox txtBx, RadioButton rb1, RadioButton rb2, RadioButton rb3)
@@ -398,8 +399,9 @@ namespace FormBasedTCPListenOutstation
                 try
                 { 
                     Console.WriteLine("Run");
-                    TcpClient tcpClient = await listener.AcceptTcpClientAsync();
+                    tcpClient = await listener.AcceptTcpClientAsync();
                     //ProcessAsync(tcpClient, ct, txtBx); 
+                    
                      clientMsg = await readFromClientAsync(tcpClient, ct, txtBx);
                     //we got a message from a client, now we process it
 
