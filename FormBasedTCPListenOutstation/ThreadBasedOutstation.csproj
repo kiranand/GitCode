@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{7D7DDD64-CCA3-4E48-9586-1D41177F78A1}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <NoStandardLibraries>false</NoStandardLibraries>
+    <AssemblyName>ConsoleApplication</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>ThreadBasedOutstation</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="FormBasedTCPListenOutstation\apdu.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\DPDU.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\Form1.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FormBasedTCPListenOutstation\obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\obj\Release\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\obj\Release\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\obj\Release\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\Program.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\Properties\AssemblyInfo.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\Properties\Resources.Designer.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\Properties\Settings.Designer.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\TCPListen.cs" />
+    <Compile Include="FormBasedTCPListenOutstation\TPDU.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FormBasedTCPListenOutstation\App.config" />
+    <None Include="FormBasedTCPListenOutstation\bin\Debug\FormBasedTCPListenOutstation.exe.config" />
+    <None Include="FormBasedTCPListenOutstation\bin\Debug\FormBasedTCPListenOutstation.vshost.exe.config" />
+    <None Include="FormBasedTCPListenOutstation\bin\Debug\FormBasedTCPListenOutstation.vshost.exe.manifest" />
+    <None Include="FormBasedTCPListenOutstation\bin\Release\FormBasedTCPListenOutstation.exe.config" />
+    <None Include="FormBasedTCPListenOutstation\bin\Release\FormBasedTCPListenOutstation.vshost.exe.config" />
+    <None Include="FormBasedTCPListenOutstation\bin\Release\FormBasedTCPListenOutstation.vshost.exe.manifest" />
+    <None Include="FormBasedTCPListenOutstation\obj\Debug\DesignTimeResolveAssemblyReferences.cache" />
+    <None Include="FormBasedTCPListenOutstation\obj\Debug\DesignTimeResolveAssemblyReferencesInput.cache" />
+    <None Include="FormBasedTCPListenOutstation\obj\Debug\FormBasedTCPListenOutstation.csproj.GenerateResource.Cache" />
+    <None Include="FormBasedTCPListenOutstation\obj\Debug\FormBasedTCPListenOutstation.csprojResolveAssemblyReference.cache" />
+    <None Include="FormBasedTCPListenOutstation\obj\Release\DesignTimeResolveAssemblyReferences.cache" />
+    <None Include="FormBasedTCPListenOutstation\obj\Release\DesignTimeResolveAssemblyReferencesInput.cache" />
+    <None Include="FormBasedTCPListenOutstation\obj\Release\FormBasedTCPListenOutstation.csproj.GenerateResource.Cache" />
+    <None Include="FormBasedTCPListenOutstation\obj\Release\FormBasedTCPListenOutstation.csprojResolveAssemblyReference.cache" />
+    <None Include="FormBasedTCPListenOutstation\Properties\Settings.settings" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="FormBasedTCPListenOutstation\Form1.resx">
+      <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormBasedTCPListenOutstation\obj\Debug\FormBasedTCPListenOutstation.Form1.resources" />
+    <EmbeddedResource Include="FormBasedTCPListenOutstation\obj\Debug\FormBasedTCPListenOutstation.Properties.Resources.resources" />
+    <EmbeddedResource Include="FormBasedTCPListenOutstation\obj\Release\FormBasedTCPListenOutstation.Form1.resources" />
+    <EmbeddedResource Include="FormBasedTCPListenOutstation\obj\Release\FormBasedTCPListenOutstation.Properties.Resources.resources" />
+    <EmbeddedResource Include="FormBasedTCPListenOutstation\Properties\Resources.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="FormBasedTCPListenOutstation\bin\Debug\FormBasedTCPListenOutstation.exe" />
+    <Content Include="FormBasedTCPListenOutstation\bin\Debug\FormBasedTCPListenOutstation.pdb" />
+    <Content Include="FormBasedTCPListenOutstation\bin\Debug\FormBasedTCPListenOutstation.vshost.exe" />
+    <Content Include="FormBasedTCPListenOutstation\bin\Release\FormBasedTCPListenOutstation.exe" />
+    <Content Include="FormBasedTCPListenOutstation\bin\Release\FormBasedTCPListenOutstation.pdb" />
+    <Content Include="FormBasedTCPListenOutstation\bin\Release\FormBasedTCPListenOutstation.vshost.exe" />
+    <Content Include="FormBasedTCPListenOutstation\FormBasedTCPListenOutstation.csproj" />
+    <Content Include="FormBasedTCPListenOutstation\obj\Debug\FormBasedTCPListenOutstation.csproj.FileListAbsolute.txt" />
+    <Content Include="FormBasedTCPListenOutstation\obj\Debug\FormBasedTCPListenOutstation.exe" />
+    <Content Include="FormBasedTCPListenOutstation\obj\Debug\FormBasedTCPListenOutstation.pdb" />
+    <Content Include="FormBasedTCPListenOutstation\obj\Release\FormBasedTCPListenOutstation.csproj.FileListAbsolute.txt" />
+    <Content Include="FormBasedTCPListenOutstation\obj\Release\FormBasedTCPListenOutstation.exe" />
+    <Content Include="FormBasedTCPListenOutstation\obj\Release\FormBasedTCPListenOutstation.pdb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="FormBasedTCPListenOutstation\obj\Debug\TempPE\" />
+    <Folder Include="FormBasedTCPListenOutstation\obj\Release\TempPE\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
+  <ProjectExtensions>
+    <VisualStudio AllowExistingFolder="true" />
+  </ProjectExtensions>
+</Project>
