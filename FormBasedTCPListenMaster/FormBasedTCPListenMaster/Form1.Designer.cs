@@ -41,7 +41,7 @@
             // btnStartMaster
             // 
             this.btnStartMaster.Location = new System.Drawing.Point(96, 26);
-            this.btnStartMaster.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnStartMaster.Margin = new System.Windows.Forms.Padding(2);
             this.btnStartMaster.Name = "btnStartMaster";
             this.btnStartMaster.Size = new System.Drawing.Size(115, 37);
             this.btnStartMaster.TabIndex = 0;
@@ -52,16 +52,17 @@
             // textBox1
             // 
             this.textBox1.Location = new System.Drawing.Point(9, 297);
-            this.textBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.textBox1.Margin = new System.Windows.Forms.Padding(2);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
+            this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.textBox1.Size = new System.Drawing.Size(324, 105);
             this.textBox1.TabIndex = 1;
             // 
             // btnWriteData
             // 
             this.btnWriteData.Location = new System.Drawing.Point(9, 93);
-            this.btnWriteData.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnWriteData.Margin = new System.Windows.Forms.Padding(2);
             this.btnWriteData.Name = "btnWriteData";
             this.btnWriteData.Size = new System.Drawing.Size(115, 37);
             this.btnWriteData.TabIndex = 2;
@@ -72,7 +73,7 @@
             // btnReadData
             // 
             this.btnReadData.Location = new System.Drawing.Point(218, 93);
-            this.btnReadData.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnReadData.Margin = new System.Windows.Forms.Padding(2);
             this.btnReadData.Name = "btnReadData";
             this.btnReadData.Size = new System.Drawing.Size(115, 37);
             this.btnReadData.TabIndex = 3;
@@ -83,7 +84,7 @@
             // txtBoxWriteIPAddr
             // 
             this.txtBoxWriteIPAddr.Location = new System.Drawing.Point(9, 142);
-            this.txtBoxWriteIPAddr.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txtBoxWriteIPAddr.Margin = new System.Windows.Forms.Padding(2);
             this.txtBoxWriteIPAddr.Multiline = true;
             this.txtBoxWriteIPAddr.Name = "txtBoxWriteIPAddr";
             this.txtBoxWriteIPAddr.Size = new System.Drawing.Size(108, 24);
@@ -103,7 +104,7 @@
             // txtBoxReadIPAddr
             // 
             this.txtBoxReadIPAddr.Location = new System.Drawing.Point(218, 142);
-            this.txtBoxReadIPAddr.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.txtBoxReadIPAddr.Margin = new System.Windows.Forms.Padding(2);
             this.txtBoxReadIPAddr.Multiline = true;
             this.txtBoxReadIPAddr.Name = "txtBoxReadIPAddr";
             this.txtBoxReadIPAddr.Size = new System.Drawing.Size(108, 24);
@@ -132,7 +133,7 @@
             this.Controls.Add(this.btnWriteData);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.btnStartMaster);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form1";
             this.Text = "DNP Master";
             this.ResumeLayout(false);

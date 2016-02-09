@@ -26,7 +26,10 @@ namespace FormBasedTCPListenOutstation
         public Form1()
         {
             
-            service = new TCPListen();
+            service = new TCPListen();  
+
+           
+
             InitializeComponent();
         } 
 
@@ -34,7 +37,7 @@ namespace FormBasedTCPListenOutstation
         {
             try
             {
-                 service.Run(textBox1, radioButton1, radioButton2, radioButton3);
+                service.Run(textBox1, radioButton1, radioButton2, radioButton3);
                 Console.Write("running GUI" + Environment.NewLine);
 
             }
@@ -56,6 +59,20 @@ namespace FormBasedTCPListenOutstation
             {
                 Console.WriteLine("service.writeToClient exception!");
             }
+        }
+
+        private async void button2_Click(object sender, EventArgs e)
+        {
+            try
+            {
+               
+                await service.buildISP(textBoxIpAddrDS.Text);
+            }
+            catch
+            {
+                Console.WriteLine("service.sendISP exception!");
+            }
+            
         }
     }
 }

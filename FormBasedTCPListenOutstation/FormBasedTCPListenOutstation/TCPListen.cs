@@ -16,8 +16,9 @@ namespace FormBasedTCPListenOutstation
     class TCPListen
     {
         TcpClient tcpClient = new TcpClient();
-
+        List<IPAddress> dnpClientAddr = new List<IPAddress>();
         RadioButton radio1, radio2, radio3;
+        TextBox stationConsole = new TextBox();
         string msgFromClient = "No Data Yet";
         int amountRead = 0;
         int amountWritten = 0;
@@ -26,6 +27,13 @@ namespace FormBasedTCPListenOutstation
         DPDU dpdu = new DPDU();
         TPDU tpdu = new TPDU();
         APDU apdu = new APDU();
+        bool splitProtocol = false;
+        bool ispPkt = false;
+
+        public void setSplit(bool splitMode)
+        {
+            splitProtocol = splitMode ? true : false;
+        }
 
         private async void ProcessAsync(TcpClient tcpClient, CancellationToken ct, TextBox txBx)
         {
@@ -70,13 +78,14 @@ namespace FormBasedTCPListenOutstation
                     // Client closed connection 
                 }
                     
-                tcpClient.Close(); 
+                //tcpClient.Close(); 
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                if (tcpClient.Connected) 
-                    tcpClient.Close(); 
+                if (tcpClient.Connected)
+                    //tcpClient.Close(); 
+                    ;
             }
         }
 
@@ -118,14 +127,16 @@ namespace FormBasedTCPListenOutstation
 
                     return (clientMsg); 
                 //tcpClient.Close();
+                    
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 if (tcpClient.Connected)
-                    tcpClient.Close();
+                    //tcpClient.Close();
                 return (clientMsg); 
             }
+            return (clientMsg); 
         }
 
 
@@ -159,13 +170,15 @@ namespace FormBasedTCPListenOutstation
                     await networkStream.WriteAsync(msgToSend, 0, msgToSend.Length, ct); 
                 }
 
-                dataServer.Close();
+                //dataServer.Close();
+                ;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 if (tcpClient.Connected)
-                    tcpClient.Close(); 
+                    //tcpClient.Close(); 
+                    ;
             }
         }
 
@@ -173,14 +186,13 @@ namespace FormBasedTCPListenOutstation
         {
             Console.Write("sendReadData" + Environment.NewLine);
             //string clientEndPoint =
-            //tcpClient.Client.RemoteEndPoint.ToString();  
+            //tcpClient.Client.RemoteEndPoint.ToString();   
             string clientEndPoint = tcpClient.Client.RemoteEndPoint.ToString();
             string localEndPoint = tcpClient.Client.LocalEndPoint.ToString();
-            //Console.WriteLine("Received connection request from " + clientEndPoint); 
-
+            //Console.WriteLine("Received connection request from " + clientEndPoint);  
             Console.WriteLine("WriteToClient Local: " + localEndPoint);
             Console.WriteLine("WriteToClient Remote: " + clientEndPoint);
-            TcpClient dataServer = new TcpClient();
+            TcpClient dataServer = new TcpClient(); 
             await dataServer.ConnectAsync(((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address, 30000); // Connect 
             NetworkStream networkStream = dataServer.GetStream();
             StreamReader reader = new StreamReader(networkStream);
@@ -197,18 +209,75 @@ namespace FormBasedTCPListenOutstation
                     await networkStream.WriteAsync(msg, 0, msg.Length, ct);
                 }
 
-                dataServer.Close();
+                //dataServer.Close();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 if (tcpClient.Connected)
-                    tcpClient.Close();
+                    //tcpClient.Close();
+                    ;
             }
         }
 
+        public async Task sendISP(byte[] msg, IPAddress addr)
+        {
+            TcpClient dataServer = new TcpClient();
+            await dataServer.ConnectAsync(addr, 20000); // Connect 
+            NetworkStream networkStream = dataServer.GetStream();
+            StreamReader reader = new StreamReader(networkStream);
+            StreamWriter writer = new StreamWriter(networkStream);
+            writer.AutoFlush = true;
+            CancellationToken ct;
+            try
+            {
+                
+                Console.Write("Connected for SendISP" + Environment.NewLine);
+
+
+                while (true)
+                {
+                    await networkStream.WriteAsync(msg, 0, msg.Length, ct);
+                }
+
+                //dataServer.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("SEndISP Exception!");
+                if (tcpClient.Connected)
+                    //tcpClient.Close();
+                    ;
+            }
+        }
+
+        public async Task buildISP(string dsIpAddr)
+        {
+            //send an ISP to the Outstation
+            IPAddress dsAddr = IPAddress.Parse(dsIpAddr);
+            APDU ispAPDU = new APDU(); //prepare to respond
+            TPDU ispTPDU = new TPDU();
+            DPDU ispDPDU = new DPDU();
+            List<byte> ispPkt = new List<byte>();
+            ispAPDU.buildAPDU(ref ispPkt, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00);
+
+            ispTPDU.buildTPDU(ref ispPkt);
+            ispDPDU.buildDPDU(ref ispPkt, 0xC5, 65519, 1); //dst=1, src=65519
+            byte[] msgBytes = ispPkt.ToArray(); 
+            stationConsole.Text += "Sending ISP" + Environment.NewLine;
+            IPAddress addr = IPAddress.Parse(dsIpAddr);
+            await sendISP(msgBytes, addr); 
+        }
+
+       
+
         public async void processAPDURead(List<byte> apduPkt)
         {
+            //First check to see if we are doing split protocol
+            if(splitProtocol)
+            {
+
+            }
             //We know this is a read, we need to find out what the indices are and return the values
             //we also need to know the Group and Variation to perform the action
             //we need to know the qualifier depending on this we make sense of the range values
@@ -247,7 +316,7 @@ namespace FormBasedTCPListenOutstation
                       
                         //params should be in the following order
                         //Confirm, Unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
-                        responseAPDU.buildAPDU(ref dnpResponse, true, 0x00, 0x00, 0x81, (byte)group, (byte)var, (byte)prefixRange, startIndex, stopIndex, apdu.binaryOutput[0],
+                        responseAPDU.buildAPDU(ref dnpResponse, 0x00, 0x00, 0x81, (byte)group, (byte)var, (byte)prefixRange, startIndex, stopIndex, apdu.binaryOutput[0],
                             apdu.binaryOutput[1], apdu.binaryOutput[2]);
 
                         responseTPDU.buildTPDU(ref dnpResponse); 
@@ -326,7 +395,23 @@ namespace FormBasedTCPListenOutstation
             radio1.Checked = (binaryOut[0] > 0)?true:false;
             radio2.Checked = (binaryOut[1] > 0) ? true : false;
             radio3.Checked = (binaryOut[2] > 0) ? true : false;
+            
         }
+
+        public void storeOutstationAddr()
+        {
+            //lets add the ipaddr of this client into our database for future use
+            IPAddress newAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
+            if (!dnpClientAddr.Contains(newAddr))
+            {
+                dnpClientAddr.Add(newAddr);
+                foreach (IPAddress addr in dnpClientAddr)
+                {
+                    stationConsole.Text += "IP:" + addr.ToString() + Environment.NewLine;
+                }
+            }
+        }
+
 
         public async void processAPDU(List<byte> apduPkt)
         {
@@ -375,6 +460,12 @@ namespace FormBasedTCPListenOutstation
 
                 case FormBasedTCPListenOutstation.functionCode.WRITE:
                     processAPDUWrite(apduPkt);
+                    break;
+
+                case FormBasedTCPListenOutstation.functionCode.ISP:
+                    stationConsole.Text += "Recvd ISP" + Environment.NewLine;
+                    break; 
+                default:
                     break;
 
             }
@@ -427,6 +518,14 @@ namespace FormBasedTCPListenOutstation
             {
                 if(dnpPkt[1] ==0x64)
                 {
+                    //Check control byte function code
+                    int controlByte = dnpPkt[2];
+                    int fnCodeMask = 0x0000000F;
+                    int fnCode = controlByte & fnCodeMask; //last 4 bits
+                    if((DPDU.functionCode)fnCode == DPDU.functionCode.ISP)
+                    {
+                        ispPkt = true;
+                    }
                     int userDatalength = dnpPkt[2] ;
                     userDatalength -= 5; //reduce 5 for header,i.e. CTRL(1)+DST(2)+SRC(2)
 
@@ -479,33 +578,35 @@ namespace FormBasedTCPListenOutstation
             return (tpduExtract);
         } 
 
+         
 
         public async void Run(TextBox txtBx, RadioButton rb1, RadioButton rb2, RadioButton rb3)
         {
             radio1 = rb1;
             radio2 = rb2;
             radio3 = rb3;
- 
+            stationConsole = txtBx;
             CancellationToken ct;
             List<byte> clientMsg = new List<byte>();
-            IPAddress self = IPAddress.Parse("127.0.0.1"); 
-            // we are listening to all Master devices on 192.168.1.136 and port 50000
+            
+            IPAddress self = IPAddress.Parse("192.168.1.200"); 
+            // we are listening to all Master devices on port 30000
             TcpListener listener = new TcpListener(IPAddress.Any, 20000);
             listener.Start(); 
-                
-            Console.Write("Array Min and Avg service is now running" );
-            Console.WriteLine(" on port " + 50000 + Environment.NewLine);
+           
+            //Console.WriteLine(" on port " + 20000 + Environment.NewLine);
             while (true)
             {
                 try
                 { 
                     Console.WriteLine("Run");
                     tcpClient = await listener.AcceptTcpClientAsync();
-                    //ProcessAsync(tcpClient, ct, txtBx); 
+
+                    txtBx.Text += "Received connection" + Environment.NewLine;
                     
                      clientMsg = await readFromClientAsync(tcpClient, ct, txtBx);
                     //we got a message from a client, now we process it
-
+                    
                     await processClientMsgAsync(clientMsg);
                 }
                 catch (Exception ex)

@@ -53,7 +53,8 @@ namespace FormBasedTCPListenMaster
                 textBox1.Text += reply;
             }*/
 
-            textBox1.Text += "Master Started" + Environment.NewLine; 
+            textBox1.Text += "Master Started" + Environment.NewLine;
+            client.listenForOutstations(textBox1);
         } 
 
 

@@ -8,6 +8,10 @@ namespace FormBasedTCPListenOutstation
 {
     class DPDU
     {
+        public enum functionCode
+        { 
+            ISP = 0x05, //Interserver Packet 
+        }
 
         //The main job of the data link layer is to add the START, LEN, CTRL and CRC bytes
 
@@ -18,7 +22,7 @@ namespace FormBasedTCPListenOutstation
         public byte dst;
         public byte src;
         public byte crc1;
-        public byte crc2;
+        public byte crc2; 
 
         public void setStart1()
         {

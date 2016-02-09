@@ -12,7 +12,9 @@ namespace FormBasedTCPListenOutstation
         READ = 0x01,
         WRITE = 0x02,
         SELECT = 0x03,
-        OPERATE = 0x04
+        OPERATE = 0x04,
+        ISP = 0x22, //Interserver Packet
+        RESPONSE = 0x81
     }
 
     public enum groupID
@@ -177,7 +179,7 @@ namespace FormBasedTCPListenOutstation
         }
 
 
-        public void buildAPDU(ref List<byte> apdu, bool response, params byte[] values)
+        public void buildAPDU(ref List<byte> apdu, params byte[] values)
         {
             //Configure the dataBase with some values
             binaryOutput[0] = 0;
@@ -197,7 +199,7 @@ namespace FormBasedTCPListenOutstation
             setFunctionCode((functionCode)values[2]);
             apdu.Add(functionCodeByte);
 
-            if(response)
+            if (functionCodeByte == (byte)functionCode.RESPONSE)
             {
                 setIIN_1();
                 apdu.Add(IIN_1);
@@ -293,6 +295,18 @@ namespace FormBasedTCPListenOutstation
                             apdu.Add(values[index]);
                         }
                     }
+                }
+                else if(functionCodeByte == (byte)functionCode.RESPONSE)
+                {
+                    //We are building a DNP response to a read cmd
+                    int valuesToWrite = (values[7] - values[6]) + 1;
+                  
+                    for (UInt16 count = 0; count < valuesToWrite; count++)
+                    {
+                        int index = count + 8;
+                        apdu.Add(values[index]);
+                    }
+                    
                 }
 
 
