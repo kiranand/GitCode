@@ -16,7 +16,11 @@ namespace FormBasedTCPListenOutstation
     class TCPListen
     {
         TcpClient tcpClient = new TcpClient();
-        List<IPAddress> dnpClientAddr = new List<IPAddress>();
+        List<IPAddress> splitClientList = new List<IPAddress>();
+        IPAddress dsAddr, localAddr; //dsAddr is the address of the station THIS Outstation choses to ask to be the Data server
+        IPAddress csAddr; //Connection Server, this is the address of the Connection Server that the Data Server would use to detect DNP pkts to
+                          //service and reply to - the replies it sends goes to the dnpClientAddr but after changing the self IP addr to the csAddr
+
         RadioButton radio1, radio2, radio3;
         TextBox stationConsole = new TextBox();
         string msgFromClient = "No Data Yet";
@@ -29,6 +33,36 @@ namespace FormBasedTCPListenOutstation
         APDU apdu = new APDU();
         bool splitProtocol = false;
         bool ispPkt = false;
+
+        public void setLocalAddr()
+        {
+            //first get out IP address and store it for later use
+            string str = "";
+
+            System.Net.Dns.GetHostName();
+
+            IPHostEntry ipEntry = System.Net.Dns.GetHostEntry(str);
+
+            IPAddress[] addr = ipEntry.AddressList;
+
+            int count = addr.Count();
+
+            for(int i=0;i<count;i++)
+            {
+                byte[] addrBytes = addr[i].GetAddressBytes();
+
+                if(addrBytes[0]==0xC0)
+                {
+                    localAddr = addr[i];
+                    break;
+                }
+            }
+               
+        }
+
+        
+
+
 
         public void setSplit(bool splitMode)
         {
@@ -189,11 +223,24 @@ namespace FormBasedTCPListenOutstation
             //tcpClient.Client.RemoteEndPoint.ToString();   
             string clientEndPoint = tcpClient.Client.RemoteEndPoint.ToString();
             string localEndPoint = tcpClient.Client.LocalEndPoint.ToString();
+            IPAddress addr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address; ; 
             //Console.WriteLine("Received connection request from " + clientEndPoint);  
             Console.WriteLine("WriteToClient Local: " + localEndPoint);
             Console.WriteLine("WriteToClient Remote: " + clientEndPoint);
             TcpClient dataServer = new TcpClient(); 
-            await dataServer.ConnectAsync(((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address, 30000); // Connect 
+            if(addr.Equals(csAddr)) //change IP address to split Client addr before sending this
+            {   
+                string splitClientIPAddrString = splitClientList[0].ToString();
+                if(splitClientIPAddrString!= null)
+                {
+                    stationConsole.Text += "Changing IP addr to " + splitClientIPAddrString + Environment.NewLine;
+                    NetworkConfigurator.setIP("192.168.1.200", "255.255.255.0", "splitClientIPAddrString");
+                    addr = IPAddress.Parse(splitClientIPAddrString);
+                }
+                
+            } 
+
+            await dataServer.ConnectAsync(addr, 30000); // Connect 
             NetworkStream networkStream = dataServer.GetStream();
             StreamReader reader = new StreamReader(networkStream);
             StreamWriter writer = new StreamWriter(networkStream);
@@ -201,7 +248,42 @@ namespace FormBasedTCPListenOutstation
             CancellationToken ct;
             try
             {
-                Console.Write("Connected for SendReadData" + Environment.NewLine);
+                stationConsole.Text += "Connected for SendReadData Client IP = " + addr.ToString() + Environment.NewLine;
+
+
+                while (true)
+                {
+                    await networkStream.WriteAsync(msg, 0, msg.Length, ct);
+                }
+
+                //dataServer.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                if (tcpClient.Connected)
+                    //tcpClient.Close();
+                    ;
+            }
+        }
+
+        public async Task sendDSRedirect(IPAddress addr, byte[] msg)
+        {
+            //We need to set the CTRL fn code to DPDU->ISP, i.e. 0x05
+
+            stationConsole.Text += "sendDSRedirect" + Environment.NewLine;
+           
+            TcpClient dataServer = new TcpClient();
+            stationConsole.Text += "Sending reply to " + addr.ToString() + Environment.NewLine;
+            await dataServer.ConnectAsync(addr, 20000); // Connect // Connect 
+            NetworkStream networkStream = dataServer.GetStream();
+            StreamReader reader = new StreamReader(networkStream);
+            StreamWriter writer = new StreamWriter(networkStream);
+            writer.AutoFlush = true;
+            CancellationToken ct;
+            try
+            {
+                stationConsole.Text += "Connected for DSRedirect" + Environment.NewLine;
 
 
                 while (true)
@@ -251,33 +333,57 @@ namespace FormBasedTCPListenOutstation
             }
         }
 
-        public async Task buildISP(string dsIpAddr)
+        public async Task buildISP(string dsIpAddr, string splitClientAddr)
         {
-            //send an ISP to the Outstation
-            IPAddress dsAddr = IPAddress.Parse(dsIpAddr);
-            APDU ispAPDU = new APDU(); //prepare to respond
-            TPDU ispTPDU = new TPDU();
-            DPDU ispDPDU = new DPDU();
-            List<byte> ispPkt = new List<byte>();
-            ispAPDU.buildAPDU(ref ispPkt, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00);
+            if (!String.IsNullOrEmpty(dsIpAddr) && !String.IsNullOrEmpty(splitClientAddr))
+            {
+                splitProtocol = true; //set it
+                //send an ISP to the Outstation
+                try
+                {
+                    dsAddr = IPAddress.Parse(dsIpAddr); //store this, we need to use this to forward traffic from splitClient to it
+                    IPAddress splitClientIP = IPAddress.Parse(splitClientAddr);  
+                    splitClientList.Add(splitClientIP);
+                    APDU ispAPDU = new APDU(); //prepare to respond
+                    TPDU ispTPDU = new TPDU();
+                    DPDU ispDPDU = new DPDU();
+                    List<byte> ispPkt = new List<byte>();
+                    string localAddrString = localAddr.ToString(); 
+                    byte[] selfAddrBytes = localAddr.GetAddressBytes();
+                    byte[] clientAddrBytes = IPAddress.Parse(splitClientAddr).GetAddressBytes();
 
-            ispTPDU.buildTPDU(ref ispPkt);
-            ispDPDU.buildDPDU(ref ispPkt, 0xC5, 65519, 1); //dst=1, src=65519
-            byte[] msgBytes = ispPkt.ToArray(); 
-            stationConsole.Text += "Sending ISP" + Environment.NewLine;
-            IPAddress addr = IPAddress.Parse(dsIpAddr);
-            await sendISP(msgBytes, addr); 
+                    //params should be in the following order
+                    //confirm, unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
+                    ispAPDU.buildAPDU(ref ispPkt, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x07, selfAddrBytes[0],
+                    selfAddrBytes[1], selfAddrBytes[2], selfAddrBytes[3], clientAddrBytes[0],clientAddrBytes[1],clientAddrBytes[2],clientAddrBytes[3]);
+
+                    ispTPDU.buildTPDU(ref ispPkt);
+                    ispDPDU.buildDPDU(ref ispPkt, 0xC5, 65519, 1); //dst=1, src=65519
+                    byte[] msgBytes = ispPkt.ToArray();
+                    stationConsole.Text += "Sending ISP" + Environment.NewLine;
+                    IPAddress addr = IPAddress.Parse(dsIpAddr);
+                    await sendISP(msgBytes, addr);
+                }
+                catch
+                {
+                    stationConsole.Text += "ERROR! DS/SplitClient IP Address could not be read" + Environment.NewLine;
+                }
+               
+               
+            }
+            else
+            {
+                stationConsole.Text += "ERROR!  Need both Data Server and Split Client IP addresses" + Environment.NewLine;
+            }
         }
 
        
 
         public async void processAPDURead(List<byte> apduPkt)
         {
-            //First check to see if we are doing split protocol
-            if(splitProtocol)
-            {
 
-            }
+            stationConsole.Text += "processAPDURead" + Environment.NewLine;
+
             //We know this is a read, we need to find out what the indices are and return the values
             //we also need to know the Group and Variation to perform the action
             //we need to know the qualifier depending on this we make sense of the range values
@@ -339,7 +445,7 @@ namespace FormBasedTCPListenOutstation
             //We know this is a write, we need to find out what the indices are and values
             //we also need to know the Group and Variation to perform the action
             //we need to know the qualifier depending on this we make sense of the range values
-            Console.Write("processAPDUWrite" + Environment.NewLine);
+            stationConsole.Text += "processAPDUWrite" + Environment.NewLine;
             FormBasedTCPListenOutstation.groupID group = (FormBasedTCPListenOutstation.groupID)apduPkt[2];
             FormBasedTCPListenOutstation.variationID var = (FormBasedTCPListenOutstation.variationID)apduPkt[3];
             FormBasedTCPListenOutstation.prefixAndRange prefixRange = (FormBasedTCPListenOutstation.prefixAndRange)apduPkt[4];
@@ -402,10 +508,10 @@ namespace FormBasedTCPListenOutstation
         {
             //lets add the ipaddr of this client into our database for future use
             IPAddress newAddr = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
-            if (!dnpClientAddr.Contains(newAddr))
+            if (!splitClientList.Contains(newAddr))
             {
-                dnpClientAddr.Add(newAddr);
-                foreach (IPAddress addr in dnpClientAddr)
+                splitClientList.Add(newAddr);
+                foreach (IPAddress addr in splitClientList)
                 {
                     stationConsole.Text += "IP:" + addr.ToString() + Environment.NewLine;
                 }
@@ -421,55 +527,84 @@ namespace FormBasedTCPListenOutstation
             //process the CTRL byte which is FIR:FIN:CON:UNS:SEQ
             //we are only interested in the CON bit since that is the only one we are using in an Outstation
             //SEQ is always zero 
-            Console.Write("processAPDU" + Environment.NewLine);
-            byte control = apduPkt[0];
-            byte confirmMask = 1 << 5;
-            int unsolicitedMask = 1 << 4;
-            bool confirmSet = ((control & confirmMask) > 0)?true:false;
-            bool unsolicitedSet = ((control & unsolicitedMask) > 0) ? true : false;
-            if(confirmSet)
+            //stationConsole.Text += "processAPDU" + Environment.NewLine;
+            //byte control = 0;
+            //byte confirmMask = 1 << 5;
+            //int unsolicitedMask = 1 << 4;
+            //bool confirmSet = ((control & confirmMask) > 0)?true:false;
+            //bool unsolicitedSet = ((control & unsolicitedMask) > 0) ? true : false;
+            FormBasedTCPListenOutstation.functionCode fnCode;
+
+            if (apduPkt.Count == 0)
             {
-                //do something
+                stationConsole.Text += "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine;
             }
+            else
+            {    
+                if (apduPkt[1].Equals(0))
+                {
 
-            if(unsolicitedSet)
-            {
-                //do something
-            }
+                    fnCode = 0;
+                }
+                else
+                {
+                    fnCode = (FormBasedTCPListenOutstation.functionCode)apduPkt[1]; //get function code
+                }
+                stationConsole.Text += "processAPDU fnCode = " + apduPkt[1] + Environment.NewLine;
 
-            //get function code
 
-          
-            FormBasedTCPListenOutstation.functionCode fnCode = (functionCode)apduPkt[1];
 
-            switch(fnCode)
-            {
-                case FormBasedTCPListenOutstation.functionCode.CONFIRM:
-                    //do something
-                    break;
+                switch (fnCode)
+                {
+                    case FormBasedTCPListenOutstation.functionCode.CONFIRM:
+                        //do something
+                        break;
 
-                case FormBasedTCPListenOutstation.functionCode.OPERATE:
-                    break;
+                    case FormBasedTCPListenOutstation.functionCode.OPERATE:
+                        break;
 
-                case FormBasedTCPListenOutstation.functionCode.READ:
-                    processAPDURead(apduPkt);
-                    break;
+                    case FormBasedTCPListenOutstation.functionCode.READ:
+                        processAPDURead(apduPkt);
+                        break;
 
-                case FormBasedTCPListenOutstation.functionCode.SELECT:
-                    break;
+                    case FormBasedTCPListenOutstation.functionCode.SELECT:
+                        break;
 
-                case FormBasedTCPListenOutstation.functionCode.WRITE:
-                    processAPDUWrite(apduPkt);
-                    break;
+                    case FormBasedTCPListenOutstation.functionCode.WRITE:
+                        processAPDUWrite(apduPkt);
+                        break;
 
-                case FormBasedTCPListenOutstation.functionCode.ISP:
-                    stationConsole.Text += "Recvd ISP" + Environment.NewLine;
-                    break; 
-                default:
-                    break;
+                    case FormBasedTCPListenOutstation.functionCode.ISP:
+                        stationConsole.Text += "Recvd ISP" + Environment.NewLine;
+                        //splitProtocol = true; //receipt of ISP should not set this, only a transmit from this station should
+                        processAPDUIsp(apduPkt);
+                        break;
+                    default:
+                        stationConsole.Text += "processAPDU in default" + Environment.NewLine;
+                        break;
 
+                }
             }
         }
+
+        public void processAPDUIsp(List<byte> apduPkt)
+        {
+            //When we receive this it means we have received a request from an overloaded DNP Outstation to become its
+            //Data Server.  We need to store both that Outstation's IP address and the DNP Client it wishes to offload to
+            //us.  After this, this Outstation will redirect all DNP traffic from this client to us and we need to process 
+            //and send replies back to that client AFTER changing our IP address to that of the Outstation
+
+            //params should be in the following order
+            //confirm[0], unsolicited[1], function[2], group[3], variation[4], prefixQualifier[5], [range[6]] OR [start index, stop index]
+            //Our IP addresses will start at byte 7 in the apdu.  First IP addr is the Outstation address and second the splitClient addr
+            byte[] CSAddrBytes = { apduPkt[7], apduPkt[8], apduPkt[9], apduPkt[10] };
+            byte[] splitClientBytes = { apduPkt[11], apduPkt[12], apduPkt[13], apduPkt[14] };
+            csAddr = new IPAddress(CSAddrBytes);
+            IPAddress splitClientAddr = new IPAddress(splitClientBytes);
+            splitClientList.Add(splitClientAddr);  
+        }
+
+
 
         public async Task<List<byte>> processTPDU(List<byte> tpduPkt)
         {
@@ -489,31 +624,37 @@ namespace FormBasedTCPListenOutstation
             return (apduExtract);
         }
 
-        public async Task<List<byte>> processClientMsgAsync(List<byte> msg)
-        {
+        public async Task processClientMsgAsync(List<byte> msg)
+        { 
             //Demultiplex the bytes in msg into layers
             //start with extracting the DPDU
-            Console.Write("processClientMsgAsync" + Environment.NewLine);
+            stationConsole.Text += "processClientMsgAsync" + Environment.NewLine;
             List<byte> dpduPkt = new List<byte>();
             List<byte> tpduPkt = new List<byte>();
             List<byte> apduPkt = new List<byte>();
-
-            if(msg[0]!=0x05)
+            
+            if (msg[0] != 0x05)
             {
                 Console.WriteLine("Error not a DNP3 pkt!");
             }
-            tpduPkt = await processDPDU(msg);
-            apduPkt = await processTPDU(tpduPkt);
-            processAPDU(apduPkt);
-            return (dpduPkt);
+            else
+            {
+                tpduPkt = await processDPDU(msg);
+                apduPkt = await processTPDU(tpduPkt);
+                processAPDU(apduPkt);
+            }
+               
+            
+          
         }
+      
 
         public async Task<List<byte>> processDPDU(List<byte> dnpPkt)
         {
             Console.Write("processDPDU" + Environment.NewLine);
             //Check the start bytes first
             List<byte> tpduExtract = new List<byte>();
-
+           
             if(dnpPkt[0] == 0x05)
             {
                 if(dnpPkt[1] ==0x64)
@@ -524,7 +665,9 @@ namespace FormBasedTCPListenOutstation
                     int fnCode = controlByte & fnCodeMask; //last 4 bits
                     if((DPDU.functionCode)fnCode == DPDU.functionCode.ISP)
                     {
-                        ispPkt = true;
+                        ispPkt = true; 
+                        stationConsole.Text += "Recvd DS Request" + Environment.NewLine;
+                       
                     }
                     int userDatalength = dnpPkt[2] ;
                     userDatalength -= 5; //reduce 5 for header,i.e. CTRL(1)+DST(2)+SRC(2)
@@ -588,26 +731,38 @@ namespace FormBasedTCPListenOutstation
             stationConsole = txtBx;
             CancellationToken ct;
             List<byte> clientMsg = new List<byte>();
-            
-            IPAddress self = IPAddress.Parse("192.168.1.200"); 
+            stationConsole.Text += "Outstation Started on " + localAddr.ToString() + Environment.NewLine;
+            IPAddress clientIP;
             // we are listening to all Master devices on port 30000
             TcpListener listener = new TcpListener(IPAddress.Any, 20000);
             listener.Start(); 
            
-            //Console.WriteLine(" on port " + 20000 + Environment.NewLine);
+           stationConsole.Text += " Listening to any IP on port " + 20000 + Environment.NewLine;
             while (true)
             {
                 try
                 { 
                     Console.WriteLine("Run");
                     tcpClient = await listener.AcceptTcpClientAsync();
-
+                    clientIP = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;  
                     txtBx.Text += "Received connection" + Environment.NewLine;
-                    
+                    clientMsg.Clear(); //clear the msg
                      clientMsg = await readFromClientAsync(tcpClient, ct, txtBx);
+                     stationConsole.Text += "Received Connect from " + clientIP.ToString();
                     //we got a message from a client, now we process it
+                    if(splitProtocol && splitClientList.Contains(clientIP))
+                    {
+                        //tcpClient.Close(); //close existing connection
+                        byte[] dsMsg = clientMsg.ToArray();
+                        await sendDSRedirect(dsAddr, dsMsg); //I am redirecting to the Data Server I previously asked to be my Data Server
+                    }
+                    else 
+                    {
+                        await processClientMsgAsync(clientMsg);
+                    }
+
+                   
                     
-                    await processClientMsgAsync(clientMsg);
                 }
                 catch (Exception ex)
                 {

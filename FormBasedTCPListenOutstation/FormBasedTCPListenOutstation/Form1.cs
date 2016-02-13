@@ -37,6 +37,8 @@ namespace FormBasedTCPListenOutstation
         {
             try
             {
+                textBox1.Text += "Outstation Start" + Environment.NewLine;
+                service.setLocalAddr(); //set our local addr for later use
                 service.Run(textBox1, radioButton1, radioButton2, radioButton3);
                 Console.Write("running GUI" + Environment.NewLine);
 
@@ -65,8 +67,8 @@ namespace FormBasedTCPListenOutstation
         {
             try
             {
-               
-                await service.buildISP(textBoxIpAddrDS.Text);
+                
+                await service.buildISP(textBoxIpAddrDS.Text, txtBxSplitClientIP.Text);
             }
             catch
             {
@@ -74,5 +76,7 @@ namespace FormBasedTCPListenOutstation
             }
             
         }
+
+        
     }
 }

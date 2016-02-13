@@ -122,7 +122,7 @@ namespace FormBasedTCPListenMaster
                 if (amountRead > 0)
                 {
                     string msgFromClient = BitConverter.ToString(dataRead, 0, amountRead);
-                    tx.Text += msgFromClient;
+                    tx.Text += "Read Response"+ msgFromClient+Environment.NewLine;
 
                     for (int i = 0; i < amountRead; i++)
                     {

@@ -37,6 +37,8 @@
             this.button2 = new System.Windows.Forms.Button();
             this.textBoxIpAddrDS = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.txtBxSplitClientIP = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // button1
@@ -130,18 +132,40 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(323, 78);
+            this.label2.Location = new System.Drawing.Point(305, 78);
             this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(58, 13);
+            this.label2.Size = new System.Drawing.Size(118, 13);
             this.label2.TabIndex = 8;
-            this.label2.Text = "IP Address";
+            this.label2.Text = "Data Server IP Address";
+            // 
+            // txtBxSplitClientIP
+            // 
+            this.txtBxSplitClientIP.Location = new System.Drawing.Point(292, 118);
+            this.txtBxSplitClientIP.Margin = new System.Windows.Forms.Padding(2);
+            this.txtBxSplitClientIP.Multiline = true;
+            this.txtBxSplitClientIP.Name = "txtBxSplitClientIP";
+            this.txtBxSplitClientIP.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.txtBxSplitClientIP.Size = new System.Drawing.Size(137, 28);
+            this.txtBxSplitClientIP.TabIndex = 10;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(305, 148);
+            this.label3.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(107, 13);
+            this.label3.TabIndex = 11;
+            this.label3.Text = "Split ClientIP Address";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(440, 275);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.txtBxSplitClientIP);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.textBoxIpAddrDS);
             this.Controls.Add(this.button2);
@@ -170,6 +194,8 @@
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.TextBox textBoxIpAddrDS;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.TextBox txtBxSplitClientIP;
+        private System.Windows.Forms.Label label3;
     }
 }
 

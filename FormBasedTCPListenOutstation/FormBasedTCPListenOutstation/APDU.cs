@@ -17,6 +17,10 @@ namespace FormBasedTCPListenOutstation
         RESPONSE = 0x81
     }
 
+    
+
+
+
     public enum groupID
     {
         G1 = 0x01, //Binary Inputs
@@ -182,9 +186,9 @@ namespace FormBasedTCPListenOutstation
         public void buildAPDU(ref List<byte> apdu, params byte[] values)
         {
             //Configure the dataBase with some values
-            binaryOutput[0] = 0;
+            binaryOutput[0] = 1;
             binaryOutput[1] = 0;
-            binaryOutput[2] = 0;
+            binaryOutput[2] = 1;
 
             //params should be in the following order
             //confirm, unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
@@ -207,6 +211,7 @@ namespace FormBasedTCPListenOutstation
                 apdu.Add(IIN_2);
 
             }
+             
             
             setGroupID((groupID)values[3]);
             apdu.Add(groupByte);
@@ -307,6 +312,26 @@ namespace FormBasedTCPListenOutstation
                         apdu.Add(values[index]);
                     }
                     
+                }
+                else if (functionCodeByte == (byte)functionCode.ISP)
+                {
+                    //It is a ISP operation
+                    //we need to first make sure that there are 6 bytes of IP addr after the range byte
+                    int arraySize = values.Length;
+                    int indexValueNumbers = arraySize - 8; //since we are at index 7 in the array
+                    int valuesToWrite = (values[7] - values[6]) + 1;
+                    if (indexValueNumbers != valuesToWrite)
+                    {
+                        Console.WriteLine("Error! Insufficient index-value information");
+                    }
+                    else
+                    {
+                        for (UInt16 count = 0; count < valuesToWrite; count++)
+                        {
+                            int index = count + 8;
+                            apdu.Add(values[index]);
+                        }
+                    }
                 }
 
 

@@ -8,7 +8,7 @@ namespace FormBasedTCPListenOutstation
 {
     class DPDU
     {
-        public enum functionCode
+        public enum functionCode:byte
         { 
             ISP = 0x05, //Interserver Packet 
         }
