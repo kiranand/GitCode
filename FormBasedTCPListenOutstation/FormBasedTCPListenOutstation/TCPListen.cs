@@ -216,7 +216,7 @@ namespace FormBasedTCPListenOutstation
             }
         }
 
-        public async Task sendReadData(byte[] msg)
+        public async Task sendReadData(byte[] msg, CancellationToken ct)
         {
             Console.Write("sendReadData" + Environment.NewLine);
             //string clientEndPoint =
@@ -228,13 +228,16 @@ namespace FormBasedTCPListenOutstation
             Console.WriteLine("WriteToClient Local: " + localEndPoint);
             Console.WriteLine("WriteToClient Remote: " + clientEndPoint);
             TcpClient dataServer = new TcpClient(); 
-            if(addr.Equals(csAddr)) //change IP address to split Client addr before sending this
+            if(addr.Equals(csAddr)) //change IP address to CS addr before sending this
             {   
                 string splitClientIPAddrString = splitClientList[0].ToString();
+                string csAddrString = csAddr.ToString();
                 if(splitClientIPAddrString!= null)
                 {
-                    stationConsole.Text += "Changing IP addr to " + splitClientIPAddrString + Environment.NewLine;
-                    NetworkConfigurator.setIP("192.168.1.200", "255.255.255.0", "splitClientIPAddrString");
+                    stationConsole.Text += "Changing IP addr to " + csAddrString + Environment.NewLine;
+                    NetworkConfigurator.setIP("192.168.1.200", "255.255.255.0", "csAddrString");
+                    setLocalAddr();
+                    stationConsole.Text += "Local Address is now " + localAddr + Environment.NewLine;
                     addr = IPAddress.Parse(splitClientIPAddrString);
                 }
                 
@@ -242,18 +245,15 @@ namespace FormBasedTCPListenOutstation
 
             await dataServer.ConnectAsync(addr, 30000); // Connect 
             NetworkStream networkStream = dataServer.GetStream();
-            StreamReader reader = new StreamReader(networkStream);
-            StreamWriter writer = new StreamWriter(networkStream);
-            writer.AutoFlush = true; 
-            CancellationToken ct;
             try
             {
                 stationConsole.Text += "Connected for SendReadData Client IP = " + addr.ToString() + Environment.NewLine;
 
 
-                while (true)
+                //while (!ct.IsCancellationRequested)
                 {
                     await networkStream.WriteAsync(msg, 0, msg.Length, ct);
+                    stationConsole.Text += "In Loop" + Environment.NewLine;
                 }
 
                 //dataServer.Close();
@@ -265,6 +265,12 @@ namespace FormBasedTCPListenOutstation
                     //tcpClient.Close();
                     ;
             }
+
+            NetworkConfigurator.setIP("csAddrString", "255.255.255.0", localAddr.ToString());
+
+            setLocalAddr();
+
+            stationConsole.Text += "Local Address is now " + localAddr + Environment.NewLine;
         }
 
         public async Task sendDSRedirect(IPAddress addr, byte[] msg)
@@ -286,7 +292,7 @@ namespace FormBasedTCPListenOutstation
                 stationConsole.Text += "Connected for DSRedirect" + Environment.NewLine;
 
 
-                while (true)
+                //while (true)
                 {
                     await networkStream.WriteAsync(msg, 0, msg.Length, ct);
                 }
@@ -383,7 +389,7 @@ namespace FormBasedTCPListenOutstation
         {
 
             stationConsole.Text += "processAPDURead" + Environment.NewLine;
-
+            CancellationToken ct;
             //We know this is a read, we need to find out what the indices are and return the values
             //we also need to know the Group and Variation to perform the action
             //we need to know the qualifier depending on this we make sense of the range values
@@ -431,7 +437,7 @@ namespace FormBasedTCPListenOutstation
 
                         string msg = BitConverter.ToString(msgBytes);
                         Console.WriteLine(msg); 
-                        await sendReadData(msgBytes); 
+                        await sendReadData(msgBytes, ct); 
                     }
 
                 }
@@ -601,7 +607,9 @@ namespace FormBasedTCPListenOutstation
             byte[] splitClientBytes = { apduPkt[11], apduPkt[12], apduPkt[13], apduPkt[14] };
             csAddr = new IPAddress(CSAddrBytes);
             IPAddress splitClientAddr = new IPAddress(splitClientBytes);
-            splitClientList.Add(splitClientAddr);  
+            splitClientList.Add(splitClientAddr);
+            stationConsole.Text += 
+                "CS Addr = " + csAddr.ToString() + "  " + "SplitClient = " + splitClientAddr.ToString() + Environment.NewLine;
         }
 
 

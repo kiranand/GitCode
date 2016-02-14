@@ -140,8 +140,6 @@ namespace FormBasedTCPListenMaster
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                if (tcpClient.Connected)
-                    tcpClient.Close();
                 return (clientMsg);
             }
         }
