@@ -95,13 +95,15 @@ namespace FormBasedTCPListenMaster
                 //await writer.WriteLineAsync(data);
                 //string response = await reader.ReadLineAsync();
                 int amountRead = 0;
-                 while (!ct.IsCancellationRequested || amountRead==0)
+                 /*while (!ct.IsCancellationRequested || amountRead==0)
                  {
                      await networkStream.WriteAsync(data, 0, data.Length, ct);
 
                      //amountRead = await networkStream.ReadAsync(dataRead, 0, dataRead.Length, ct);
-                 }
-               
+                 }*/
+
+
+                await networkStream.WriteAsync(data, 0, data.Length, ct);
                 client.Close();
                 //return response;
                 return (dataRead.ToString());

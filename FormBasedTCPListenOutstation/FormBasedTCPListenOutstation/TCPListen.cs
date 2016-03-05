@@ -93,19 +93,20 @@ namespace FormBasedTCPListenOutstation
 
         void sendWithSpoofedAddress(IPAddress addr, byte[] msg)
         {
-            ushort tcpSourcePort = 20000;
+            
+            ushort tcpSourcePort = 30000;
             ushort tcpDestinationPort = 20000; 
-            var tcpPacket = new TcpPacket(tcpSourcePort, tcpDestinationPort); 
+            var tcpPacket = new TcpPacket(tcpSourcePort, tcpDestinationPort);
+            tcpPacket.PayloadData = msg;
             //var ipSourceAddress = System.Net.IPAddress.Parse("192.168.1.225");
             var ipSourceAddress = addr;
             var ipDestinationAddress = System.Net.IPAddress.Parse("192.168.1.91");
-            var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress);
-
+            var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress); 
             var sourceHwAddress = "78-E3-B5-57-BC-90";
             var ethernetSourceHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(sourceHwAddress);
             var destinationHwAddress = "00-25-64-EC-71-FF";
             var ethernetDestinationHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(destinationHwAddress);
-
+            stationConsole.Text += "Sending Spoofed Msg to Station: " + ipDestinationAddress.ToString() + Environment.NewLine;
             // NOTE: using EthernetPacketType.None to illustrate that the Ethernet
             //       protocol type is updated based on the packet payload that is
             //       assigned to that particular Ethernet packet
@@ -319,34 +320,37 @@ namespace FormBasedTCPListenOutstation
                 string splitClientIPAddrString = splitClientList[0].ToString();
                 string csAddrString = csAddr.ToString();
                 if (splitClientIPAddrString != null)
-                {   
+                {
                     addr = IPAddress.Parse(csAddrString);
                     sendWithSpoofedAddress(addr, msg);
                 }
 
             }
-
-            await dataServer.ConnectAsync(addr, 20000); // Connect 
-            NetworkStream networkStream = dataServer.GetStream();
-            try
+            else
             {
-                stationConsole.Text += "Connected for SendReadData Client IP = " + addr.ToString() + Environment.NewLine;
 
-
-                //while (!ct.IsCancellationRequested)
+                await dataServer.ConnectAsync(addr, 20000); // Connect 
+                NetworkStream networkStream = dataServer.GetStream();
+                try
                 {
-                    await networkStream.WriteAsync(msg, 0, msg.Length, ct);
-                    stationConsole.Text += "Response" + BitConverter.ToString(msg) +Environment.NewLine;
-                }
+                    stationConsole.Text += "Connected for SendReadData Client IP = " + addr.ToString() + Environment.NewLine;
 
-                //dataServer.Close();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                if (tcpClient.Connected)
-                    //tcpClient.Close();
-                    ;
+
+                    //while (!ct.IsCancellationRequested)
+                    {
+                        await networkStream.WriteAsync(msg, 0, msg.Length, ct);
+                        stationConsole.Text += "Response" + BitConverter.ToString(msg) + Environment.NewLine;
+                    }
+
+                    //dataServer.Close();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    if (tcpClient.Connected)
+                        //tcpClient.Close();
+                        ;
+                }
             }
 
           
@@ -748,6 +752,7 @@ namespace FormBasedTCPListenOutstation
             {
                 if (dnpPkt[1] == 0x64)
                 {
+                    //Lets extract only one DNP3 packet here
                     //Check control byte function code
                     int controlByte = dnpPkt[2];
                     int fnCodeMask = 0x0000000F;
