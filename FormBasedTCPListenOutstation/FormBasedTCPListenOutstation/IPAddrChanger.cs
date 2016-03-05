@@ -8,64 +8,47 @@ using System.Diagnostics;
 
 namespace FormBasedTCPListenOutstation
 {
-    public static class NetworkConfigurator
+    class NetworkManagement
     {
         /// <summary>
-        /// Returns the network card configuration of the specified NIC
+        /// Set's a new IP Address and it's Submask of the local machine
         /// </summary>
-        /// <PARAM name="nicName">Name of the NIC</PARAM>
-        /// <PARAM name="ipAdresses">Array of IP</PARAM>
-        /// <PARAM name="subnets">Array of subnet masks</PARAM>
-        /// <PARAM name="gateways">Array of gateways</PARAM>
-        /// <PARAM name="dnses">Array of DNS IP</PARAM>
-        public static void GetIP(string nicName, out string[] ipAdresses,
-          out string[] subnets, out string[] gateways, out string[] dnses)
+        /// <param name="ip_address">The IP Address</param>
+        /// <param name="subnet_mask">The Submask IP Address</param>
+        /// <remarks>Requires a reference to the System.Management namespace</remarks>
+        public void setIP(string ip_address, string subnet_mask)
         {
-            ipAdresses = null;
-            subnets = null;
-            gateways = null;
-            dnses = null;
+            ManagementClass objMC = new ManagementClass("Win32_NetworkAdapterConfiguration");
+            ManagementObjectCollection objMOC = objMC.GetInstances();
 
-            ManagementClass mc = new ManagementClass(
-              "Win32_NetworkAdapterConfiguration");
-            ManagementObjectCollection moc = mc.GetInstances();
-
-            foreach (ManagementObject mo in moc)
+            foreach (ManagementObject objMO in objMOC)
             {
-                // Make sure this is a IP enabled device. 
-                // Not something like memory card or VM Ware
-                if (mo["ipEnabled"] is bool)
+                if ((bool)objMO["IPEnabled"])
                 {
-                    if (mo["Caption"].Equals(nicName))
+                    try
                     {
-                        ipAdresses = (string[])mo["IPAddress"];
-                        subnets = (string[])mo["IPSubnet"];
-                        gateways = (string[])mo["DefaultIPGateway"];
-                        dnses = (string[])mo["DNSServerSearchOrder"];
+                        ManagementBaseObject setIP;
+                        ManagementBaseObject newIP =
+                            objMO.GetMethodParameters("EnableStatic");
 
-                        break;
+                        newIP["IPAddress"] = new string[] { ip_address };
+                        newIP["SubnetMask"] = new string[] { subnet_mask };
+
+                        setIP = objMO.InvokeMethod("EnableStatic", newIP, null);
                     }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+
+
                 }
             }
         }
 
+        
 
-
-
-        public static void setIP(string _iP, string subnetMask, string _defaultGateway)
-        {
-
-            string cmd = "";
-
-            cmd = "interface ip set address name = \"Ethernet\" static " + _iP + " " + subnetMask + " " + _defaultGateway;
-
-            Process p = new Process();
-            ProcessStartInfo psi = new ProcessStartInfo("netsh", cmd);
-            p.StartInfo = psi;
-            psi.Verb = "runas";
-            p.Start();
-            System.Threading.Thread.Sleep(20000);
-        }
     }
+ 
 }
 

@@ -11,6 +11,7 @@ using System.Threading;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
+using System.Diagnostics;
 
 namespace FormBasedTCPListenMaster
 {
@@ -52,14 +53,17 @@ namespace FormBasedTCPListenMaster
                 string reply = await runClientAsync(dataToSend);
                 textBox1.Text += reply;
             }*/
-
-            textBox1.Text += "Master Started" + Environment.NewLine;
+            client.setLocalAddr(textBox1);
+            textBox1.Text += "Master Started on addr: " + client.localAddr + Environment.NewLine;
             client.listenForOutstations(textBox1);
+             
         } 
 
 
         private async void btnWriteData_Click(object sender, EventArgs e)
         {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start(); 
             //Send a write packet to the Outstation
             IPAddress addr = IPAddress.Parse(txtBoxWriteIPAddr.Text);
             List<byte> dnpPkt = new List<byte>();
@@ -67,9 +71,19 @@ namespace FormBasedTCPListenMaster
             byte[] msgBytes = dnpPkt.ToArray();
 
             //string msg = BitConverter.ToString(msgBytes);
-            //Console.WriteLine(msg); 
+            //Console.WriteLine(msg);  
+             
             string response = await runClientWriteAsync(msgBytes, addr);
-            textBox1.Text += response;
+             
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                ts.Hours, ts.Minutes, ts.Seconds,
+                ts.Milliseconds / 10);
+            textBox1.Text += response + Environment.NewLine;
+            stopWatch.Reset();
+            
         }
 
         public void buildPkt(ref List<byte> dnpPkt)

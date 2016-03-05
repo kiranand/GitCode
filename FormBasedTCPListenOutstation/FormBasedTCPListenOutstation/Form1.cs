@@ -33,14 +33,15 @@ namespace FormBasedTCPListenOutstation
             InitializeComponent();
         } 
 
-        private  void button1_Click(object sender, EventArgs e)
+        private  async void button1_Click(object sender, EventArgs e)
         {
             try
             {
                 textBox1.Text += "Outstation Start" + Environment.NewLine;
                 service.setLocalAddr(); //set our local addr for later use
+                
                 service.Run(textBox1, radioButton1, radioButton2, radioButton3);
-                Console.Write("running GUI" + Environment.NewLine);
+                textBox1.Text += "running GUI" + Environment.NewLine;
 
             }
             catch (Exception ex)

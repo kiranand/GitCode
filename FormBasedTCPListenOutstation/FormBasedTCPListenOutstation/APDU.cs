@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections;
 
 namespace FormBasedTCPListenOutstation
 {
@@ -184,12 +185,7 @@ namespace FormBasedTCPListenOutstation
 
 
         public void buildAPDU(ref List<byte> apdu, params byte[] values)
-        {
-            //Configure the dataBase with some values
-            binaryOutput[0] = 1;
-            binaryOutput[1] = 0;
-            binaryOutput[2] = 1;
-
+        {  
             //params should be in the following order
             //confirm, unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
             setControlFIR(true);
@@ -305,13 +301,26 @@ namespace FormBasedTCPListenOutstation
                 {
                     //We are building a DNP response to a read cmd
                     int valuesToWrite = (values[7] - values[6]) + 1;
+                    byte[] binaryResponse = new byte[1];
+                    var bitArray = new BitArray(binaryResponse);
                   
                     for (UInt16 count = 0; count < valuesToWrite; count++)
                     {
+                        //we are only dealing with binary inputs so we need to pack responses as bit values
+                        //since we only have 3 binary inputs we only set 3 values in one response byte
+                        //examine values and set bits accordingly based on position
+                       
                         int index = count + 8;
-                        apdu.Add(values[index]);
-                    }
-                    
+
+                        if (values[index]==1)
+                        {
+                            bitArray.Set(count, true);
+                        }
+                        //apdu.Add(values[index]);
+                    } 
+
+                    bitArray.CopyTo(binaryResponse, 0);  
+                    apdu.Add(binaryResponse[0]);
                 }
                 else if (functionCodeByte == (byte)functionCode.ISP)
                 {

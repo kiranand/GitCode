@@ -8,13 +8,75 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Windows.Forms;
+using System.Diagnostics;
+using SharpPcap;
+using SharpPcap.LibPcap;
+using SharpPcap.WinPcap;
+using SharpPcap.AirPcap;
+using PacketDotNet;
+using System.Net.NetworkInformation;
 
 namespace FormBasedTCPListenMaster
 {
     public class masterTCPClient
     {
-        IPAddress OutstationIPAddr;
+        public IPAddress OutstationIPAddr, localAddr;
         byte[] dataRead = new byte[100];
+        TextBox stationConsole = new TextBox();
+        SharpPcap.CaptureDeviceList devices;
+        public void setLocalAddr(TextBox txBx)
+        {
+            stationConsole = txBx;
+            //first get out IP address and store it for later use
+            string str = "";
+            stationConsole.Text += "Determine Local Addr" + Environment.NewLine;
+            System.Net.NetworkInformation.NetworkInterface[] nics = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+            List<string> ipAddr = new List<string>();
+
+            foreach (NetworkInterface adapter in nics)
+            {
+                foreach (var x in adapter.GetIPProperties().UnicastAddresses)
+                {
+                    if (x.Address.AddressFamily == AddressFamily.InterNetwork && x.IsDnsEligible)
+                    {
+                        Console.WriteLine(" IPAddress ........ : {0:x}", x.Address.ToString());
+                        ipAddr.Add(x.Address.ToString());
+                    }
+                }
+            }
+
+
+            int count = ipAddr.Count();
+
+            for (int i = 0; i < count; i++)
+            {
+                byte[] addrBytes = IPAddress.Parse(ipAddr[i]).GetAddressBytes();
+
+                if (addrBytes[0] == 0xC0)
+                {
+                    localAddr = IPAddress.Parse(ipAddr[i]);
+                    break;
+                }
+                else
+                {
+                    stationConsole.Text += "ERROR Unable to determine self IP address!!!" + Environment.NewLine;
+                }
+            }
+
+            // Retrieve the device list
+
+            devices = SharpPcap.CaptureDeviceList.Instance;
+
+            // If no devices were found print an error
+            if (devices.Count < 1)
+            {
+                stationConsole.Text += "No devices were found on this machine" + Environment.NewLine;
+                return;
+            }
+
+        }
+
+
         public async Task<string> SendRequest(byte[] data, IPAddress addr, CancellationToken ct)
         {
             byte[] dataRead = new byte[100];
@@ -37,7 +99,7 @@ namespace FormBasedTCPListenMaster
                  {
                      await networkStream.WriteAsync(data, 0, data.Length, ct);
 
-                     amountRead = await networkStream.ReadAsync(dataRead, 0, dataRead.Length, ct);
+                     //amountRead = await networkStream.ReadAsync(dataRead, 0, dataRead.Length, ct);
                  }
                
                 client.Close();
@@ -102,6 +164,9 @@ namespace FormBasedTCPListenMaster
         {
             //string clientEndPoint =
             //tcpClient.Client.RemoteEndPoint.ToString();
+         
+            // Get the elapsed time as a TimeSpan value.
+            
             List<byte> clientMsg = new List<byte>();
 
             string clientEndPoint = tcpClient.Client.RemoteEndPoint.ToString();
@@ -121,8 +186,9 @@ namespace FormBasedTCPListenMaster
 
                 if (amountRead > 0)
                 {
+                    
                     string msgFromClient = BitConverter.ToString(dataRead, 0, amountRead);
-                    tx.Text += "Read Response"+ msgFromClient+Environment.NewLine;
+                    tx.Text += "Read Response" + Environment.NewLine + msgFromClient + Environment.NewLine;
 
                     for (int i = 0; i < amountRead; i++)
                     {
@@ -154,10 +220,10 @@ namespace FormBasedTCPListenMaster
             List<byte> clientMsg = new List<byte>();
             //IPAddress addr = IPAddress.Parse("192.168.1.200");
             // we are listening to all Master devices on 192.168.1.136 and port 50000
-            TcpListener listener = new TcpListener(IPAddress.Any, 30000);
+            TcpListener listener = new TcpListener(IPAddress.Any, 20000);
             listener.Start();
 
-            Console.Write("Listening to Outstations" + Environment.NewLine);
+            txtBx.Text += "Listening to Outstations" + Environment.NewLine;
             TcpClient tcpClient = new TcpClient();
             while (true)
             {
@@ -166,7 +232,7 @@ namespace FormBasedTCPListenMaster
                     Console.WriteLine("Run"); 
                     tcpClient = await listener.AcceptTcpClientAsync();
                     //ProcessAsync(tcpClient, ct, txtBx); 
-                    Console.Write("connection accept");
+                    txtBx.Text += "connection accept" + Environment.NewLine;
                     clientMsg = await readFromClientAsync(tcpClient, txtBx, ct);
                     //we got a message from a client, now we process it
 
