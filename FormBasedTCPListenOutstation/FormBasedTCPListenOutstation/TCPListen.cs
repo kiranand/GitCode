@@ -820,7 +820,7 @@ namespace FormBasedTCPListenOutstation
                  
                     //Lets extract only one DNP3 packet here
                     //Check control byte function code
-                int controlByte = correctedPkt[2];
+                int controlByte = correctedPkt[3];
                     int fnCodeMask = 0x0000000F;
                     int fnCode = controlByte & fnCodeMask; //last 4 bits
                     if ((DPDU.functionCode)fnCode == DPDU.functionCode.ISP)
@@ -847,7 +847,24 @@ namespace FormBasedTCPListenOutstation
                             byte lenBlock2 = (byte)(userDatalength - (byte)16);
                             //we need two blocks each with its own CRC bytes
                             byte[] crcBlock1 = dpdu.makeCRC(ref correctedPkt, 10, ((10 + 16) - 1));
-                            byte[] crcBlock2 = dpdu.makeCRC(ref correctedPkt, (10 + 16), (correctedPkt.Count() - 1));
+                            byte[] crcBlock2 = dpdu.makeCRC(ref correctedPkt, (10 + 16 +2), (correctedPkt.Count() - 3));
+                            int crcIndex3 = correctedPkt.Count - 2;
+                            int crcIndex4 = correctedPkt.Count - 1;
+                            int crcIndex1 = correctedPkt.Count - (lenBlock2 + 2 + 2); //2 for CRC of 2nd block and 2 for 1st block CRC
+                            int crcIndex2 = crcIndex1 + 1;
+
+                            if((crcBlock1[0]==correctedPkt[crcIndex1]) && (crcBlock1[1]==correctedPkt[crcIndex2]) &&
+                                (crcBlock2[0]==correctedPkt[crcIndex3]) && (crcBlock2[1]==correctedPkt[crcIndex4]))
+                            {
+                                //we can now proceed with processing the data link function code
+                                Console.WriteLine("Datalink CRC correct!");
+                                //now we can extract the TPDU from the DPDU 
+
+                                for (int i = 0; i < (int)userDatalength; i++)
+                                {
+                                    tpduExtract.Add(correctedPkt[i + 10]);
+                                }
+                            }
 
                         }
                         else
@@ -1048,6 +1065,14 @@ namespace FormBasedTCPListenOutstation
                 for(int j=0;j<=validIndex;j++)
                 {
                     newPkt.Insert(j,msgArray[j]);
+                }
+            }
+            else
+            {
+                validIndex = msgArray.Length - 1;
+                for (int j = 0; j <= validIndex; j++)
+                {
+                    newPkt.Insert(j, msgArray[j]);
                 }
             }
 
