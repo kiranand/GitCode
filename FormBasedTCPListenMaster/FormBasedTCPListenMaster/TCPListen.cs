@@ -24,24 +24,47 @@ namespace FormBasedTCPListenMaster
         byte[] dataRead = new byte[100];
         TextBox stationConsole = new TextBox();
         SharpPcap.CaptureDeviceList devices;
+
         public void setLocalAddr(TextBox txBx)
         {
             stationConsole = txBx;
             //first get out IP address and store it for later use
             string str = "";
-            stationConsole.Text += "Determine Local Addr" + Environment.NewLine;
+            //stationConsole.Text += "Determine Local Addr" + Environment.NewLine;
             System.Net.NetworkInformation.NetworkInterface[] nics = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
             List<string> ipAddr = new List<string>();
 
+
             foreach (NetworkInterface adapter in nics)
             {
-                foreach (var x in adapter.GetIPProperties().UnicastAddresses)
+                NetworkInterfaceType networkType = adapter.NetworkInterfaceType;
+                if (networkType.Equals(NetworkInterfaceType.Ethernet))
                 {
-                    if (x.Address.AddressFamily == AddressFamily.InterNetwork && x.IsDnsEligible)
+                    foreach (var x in adapter.GetIPProperties().UnicastAddresses)
                     {
-                        Console.WriteLine(" IPAddress ........ : {0:x}", x.Address.ToString());
-                        ipAddr.Add(x.Address.ToString());
+                        if (x.Address.AddressFamily == AddressFamily.InterNetwork && x.IsDnsEligible)
+                        {
+                            Console.WriteLine(" IPAddress ........ : {0:x}", x.Address.ToString());
+                            ipAddr.Add(x.Address.ToString());
+                        }
                     }
+
+                    PhysicalAddress address = adapter.GetPhysicalAddress();
+                    byte[] bytes = address.GetAddressBytes();
+                    for (int i = 0; i < bytes.Length; i++)
+                    {
+                        // Display the physical address in hexadecimal.
+                        txBx.Text += bytes[i].ToString("X2");
+                        Console.Write("{0}", bytes[i].ToString("X2"));
+                        // Insert a hyphen after each byte, unless we are at the end of the 
+                        // address.
+                        if (i != bytes.Length - 1)
+                        {
+                            Console.Write("-");
+                            txBx.Text += "-";
+                        }
+                    }
+                    txBx.Text += Environment.NewLine;
                 }
             }
 
@@ -55,6 +78,7 @@ namespace FormBasedTCPListenMaster
                 if (addrBytes[0] == 0xC0)
                 {
                     localAddr = IPAddress.Parse(ipAddr[i]);
+                    txBx.Text += localAddr;
                     break;
                 }
                 else
@@ -104,7 +128,7 @@ namespace FormBasedTCPListenMaster
 
 
                 await networkStream.WriteAsync(data, 0, data.Length, ct);
-                client.Close();
+                //client.Close();
                 //return response;
                 return (dataRead.ToString());
             }
@@ -146,7 +170,7 @@ namespace FormBasedTCPListenMaster
                     //Thread.Sleep(500);
                 }
 
-                client.Close();
+                //client.Close();
                 //return response;
                 return (dataRead.ToString());
             }

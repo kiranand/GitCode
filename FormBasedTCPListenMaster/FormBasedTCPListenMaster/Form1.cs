@@ -53,7 +53,7 @@ namespace FormBasedTCPListenMaster
                 string reply = await runClientAsync(dataToSend);
                 textBox1.Text += reply;
             }*/
-            client.setLocalAddr(textBox1);
+            client.setLocalAddr(textBoxAddresses);
             textBox1.Text += "Master Started on addr: " + client.localAddr + Environment.NewLine;
             client.listenForOutstations(textBox1);
              
@@ -115,6 +115,12 @@ namespace FormBasedTCPListenMaster
 
             client.listenForOutstations(textBox1);
 
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            textBox1.SelectionStart = textBox1.Text.Length;
+            textBox1.ScrollToCaret();
         }
     }
 }
