@@ -22,6 +22,7 @@ namespace FormBasedTCPListenOutstation
     {
         TcpClient tcpClient = new TcpClient();
         List<IPAddress> splitClientList = new List<IPAddress>();
+        byte[] splitClientHWaddr = new byte[6];
         IPAddress dsAddr, localAddr; //dsAddr is the address of the station THIS Outstation choses to ask to be the Data server
         IPAddress csAddr; //Connection Server, this is the address of the Connection Server that the Data Server would use to detect DNP pkts to
         //service and reply to - the replies it sends goes to the dnpClientAddr but after changing the self IP addr to the csAddr
@@ -814,6 +815,7 @@ namespace FormBasedTCPListenOutstation
             List<byte> tpduExtract = new List<byte>();
             List<byte> correctedPkt = new List<byte>();
             correctedPkt = checkDuplicates(dnpPkt);
+            byte lenBlock2;
 
             if (correctedPkt[0] == 0x05)
             {
@@ -844,7 +846,7 @@ namespace FormBasedTCPListenOutstation
 
                         if (userDatalength > 16)
                         {
-                            byte lenBlock2 = (byte)(userDatalength - (byte)16);
+                            lenBlock2 = (byte)(userDatalength - (byte)16);
                             //we need two blocks each with its own CRC bytes
                             byte[] crcBlock1 = dpdu.makeCRC(ref correctedPkt, 10, ((10 + 16) - 1));
                             byte[] crcBlock2 = dpdu.makeCRC(ref correctedPkt, (10 + 16 +2), (correctedPkt.Count() - 3));
@@ -860,9 +862,14 @@ namespace FormBasedTCPListenOutstation
                                 Console.WriteLine("Datalink CRC correct!");
                                 //now we can extract the TPDU from the DPDU 
 
-                                for (int i = 0; i < (int)userDatalength; i++)
+                                for (int i = 10; i < (correctedPkt.Count-2); i++) //start from 10 since first 10 bytes is header
                                 {
-                                    tpduExtract.Add(correctedPkt[i + 10]);
+                                    if(i==crcIndex1)
+                                    {
+                                        i = i + 2; //skip over first block CRC
+                                    } 
+
+                                    tpduExtract.Add(correctedPkt[i]);
                                 }
                             }
 
@@ -880,9 +887,9 @@ namespace FormBasedTCPListenOutstation
                                 Console.WriteLine("Datalink CRC correct!");
                                 //now we can extract the TPDU from the DPDU 
 
-                                for (int i = 0; i < (int)userDatalength; i++)
+                                for (int i = 10; i <= (int)userDatalength; i++)
                                 {
-                                    tpduExtract.Add(correctedPkt[i + 10]);
+                                    tpduExtract.Add(correctedPkt[i]);
                                 }
 
 
