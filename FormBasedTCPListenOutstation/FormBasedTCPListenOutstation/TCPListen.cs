@@ -25,6 +25,7 @@ namespace FormBasedTCPListenOutstation
         IPAddress csAddr; //Connection Server, this is the address of the Connection Server that the Data Server would use to detect DNP pkts to
         //service and reply to - the replies it sends goes to the dnpClientAddr but after changing the self IP addr to the csAddr
 
+        public static ManualResetEvent allDone = new ManualResetEvent(false); 
         RadioButton radio1, radio2, radio3;
         TextBox stationConsole = new TextBox();
         string msgFromClient = "No Data Yet";
@@ -40,7 +41,7 @@ namespace FormBasedTCPListenOutstation
         bool ispPkt = false;
         SharpPcap.CaptureDeviceList devices;
 
-        public void setLocalAddr()
+        public void setLocalAddr(TextBox addresses)
         {
             //first get out IP address and store it for later use
             string str = "";
@@ -50,13 +51,36 @@ namespace FormBasedTCPListenOutstation
 
            foreach (NetworkInterface adapter in nics)
            {
-               foreach (var x in adapter.GetIPProperties().UnicastAddresses)
+               NetworkInterfaceType networkType = adapter.NetworkInterfaceType;
+               if (networkType.Equals(NetworkInterfaceType.Ethernet))
                {
-                   if (x.Address.AddressFamily == AddressFamily.InterNetwork && x.IsDnsEligible)
+
+                   foreach (var x in adapter.GetIPProperties().UnicastAddresses)
                    {
-                       Console.WriteLine(" IPAddress ........ : {0:x}", x.Address.ToString());
-                       ipAddr.Add(x.Address.ToString());
+                       if (x.Address.AddressFamily == AddressFamily.InterNetwork && x.IsDnsEligible)
+                       {
+                           Console.WriteLine(" IPAddress ........ : {0:x}", x.Address.ToString());
+
+                           ipAddr.Add(x.Address.ToString());
+                       }
                    }
+
+                   PhysicalAddress address = adapter.GetPhysicalAddress();
+                   byte[] bytes = address.GetAddressBytes();
+                   for (int i = 0; i < bytes.Length; i++)
+                   {
+                       // Display the physical address in hexadecimal.
+                       addresses.Text += bytes[i].ToString("X2");
+                       Console.Write("{0}", bytes[i].ToString("X2"));
+                       // Insert a hyphen after each byte, unless we are at the end of the 
+                       // address.
+                       if (i != bytes.Length - 1)
+                       {
+                           Console.Write("-");
+                           addresses.Text += "-";
+                       }
+                   }
+                   addresses.Text += Environment.NewLine;
                }
            }
 
@@ -70,6 +94,7 @@ namespace FormBasedTCPListenOutstation
                    if (addrBytes[0] == 0xC0)
                    {
                        localAddr = IPAddress.Parse(ipAddr[i]);
+                       addresses.Text += localAddr;
                        break;
                    }
                    else
@@ -100,7 +125,7 @@ namespace FormBasedTCPListenOutstation
             tcpPacket.PayloadData = msg;
             //var ipSourceAddress = System.Net.IPAddress.Parse("192.168.1.225");
             var ipSourceAddress = addr;
-            var ipDestinationAddress = System.Net.IPAddress.Parse("192.168.1.91");
+            var ipDestinationAddress = System.Net.IPAddress.Parse(splitClientList[0].ToString());
             var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress); 
             var sourceHwAddress = "78-E3-B5-57-BC-90";
             var ethernetSourceHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(sourceHwAddress);
@@ -131,20 +156,27 @@ namespace FormBasedTCPListenOutstation
             // Open the device for capturing
             int readTimeoutMilliseconds = 1000;
             ICaptureDevice device;
+            string localInterfaceUsed = "78E3B557BC90";
+
             for (ushort i = 0; i < 3; i++)
-            {
-                device = devices[i];
+            {  
+                device = devices[i]; 
                 device.Open(DeviceMode.Promiscuous, readTimeoutMilliseconds);
-                try
+                var macAddress = device.MacAddress; 
+                string hwAddr = macAddress.ToString();
+                if (hwAddr.Equals(localInterfaceUsed))
                 {
-                    // Send the packet out the network device
-                    device.SendPacket(packetBytes);
-                    Console.WriteLine("-- Packet sent successfuly.");
-                    device.Close();
-                }
-                catch (Exception eX)
-                {
-                    Console.Write("Pkt send failed" + Environment.NewLine);
+                    try
+                    {
+                        // Send the packet out the network device
+                        device.SendPacket(packetBytes);
+                        Console.WriteLine("-- Packet sent successfuly.");
+                        device.Close();
+                    }
+                    catch (Exception eX)
+                    {
+                        Console.Write("Pkt send failed" + Environment.NewLine);
+                    }
                 }
             }
         }
@@ -451,7 +483,8 @@ namespace FormBasedTCPListenOutstation
                     ispTPDU.buildTPDU(ref ispPkt);
                     ispDPDU.buildDPDU(ref ispPkt, 0xC5, 65519, 1); //dst=1, src=65519
                     byte[] msgBytes = ispPkt.ToArray();
-                    stationConsole.Text += "Sending ISP" + Environment.NewLine;
+                    string ISPData = BitConverter.ToString(msgBytes); 
+                    stationConsole.Text += "Sending ISP :" + ISPData + Environment.NewLine;
                     IPAddress addr = IPAddress.Parse(dsIpAddr);
                     await sendISP(msgBytes, addr);
                 }
@@ -682,7 +715,7 @@ namespace FormBasedTCPListenOutstation
         {
             //When we receive this it means we have received a request from an overloaded DNP Outstation to become its
             //Data Server.  We need to store both that Outstation's IP address and the DNP Client it wishes to offload to
-            //us.  After this, this Outstation will redirect all DNP traffic from this client to us and we need to process 
+            //us.  After this, the overloaded Outstation will redirect all DNP traffic from a client to us and we need to process 
             //and send replies back to that client AFTER changing our IP address to that of the Outstation
 
             //params should be in the following order
@@ -726,6 +759,11 @@ namespace FormBasedTCPListenOutstation
             List<byte> tpduPkt = new List<byte>();
             List<byte> apduPkt = new List<byte>();
 
+            if (msg.Count == 0)
+            {
+                stationConsole.Text += "ERROR!  EMPTY PKT RCVD!" + Environment.NewLine;
+            }
+
             if (msg[0] != 0x05)
             {
                 Console.WriteLine("Error not a DNP3 pkt!");
@@ -733,8 +771,24 @@ namespace FormBasedTCPListenOutstation
             else
             {
                 tpduPkt = await processDPDU(msg);
-                apduPkt = await processTPDU(tpduPkt);
-                processAPDU(apduPkt);
+                if (tpduPkt.Count == 0)
+                {
+                    stationConsole.Text += "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine;
+                }
+                else
+                {
+                    apduPkt = await processTPDU(tpduPkt);
+                    if (apduPkt.Count == 0)
+                    {
+                        stationConsole.Text += "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine;
+                    }
+                    else
+                    {
+                        processAPDU(apduPkt);
+                    }
+                }
+                
+                
             }
 
 
@@ -747,14 +801,15 @@ namespace FormBasedTCPListenOutstation
             Console.Write("processDPDU" + Environment.NewLine);
             //Check the start bytes first
             List<byte> tpduExtract = new List<byte>();
+            List<byte> correctedPkt = new List<byte>();
+            correctedPkt = checkDuplicates(dnpPkt);
 
-            if (dnpPkt[0] == 0x05)
+            if (correctedPkt[0] == 0x05)
             {
-                if (dnpPkt[1] == 0x64)
-                {
+                 
                     //Lets extract only one DNP3 packet here
                     //Check control byte function code
-                    int controlByte = dnpPkt[2];
+                int controlByte = correctedPkt[2];
                     int fnCodeMask = 0x0000000F;
                     int fnCode = controlByte & fnCodeMask; //last 4 bits
                     if ((DPDU.functionCode)fnCode == DPDU.functionCode.ISP)
@@ -763,14 +818,14 @@ namespace FormBasedTCPListenOutstation
                         stationConsole.Text += "Recvd DS Request" + Environment.NewLine;
 
                     }
-                    int userDatalength = dnpPkt[2];
+                    int userDatalength = correctedPkt[2];
                     userDatalength -= 5; //reduce 5 for header,i.e. CTRL(1)+DST(2)+SRC(2)
 
                     //Now calculate the header CRC, the length excludes the 2 CRC bytes at the very end
                     //Calculate header CRC
-                    byte[] hdrCRC = dpdu.makeCRC(ref dnpPkt, 0, 7);
+                    byte[] hdrCRC = dpdu.makeCRC(ref correctedPkt, 0, 7);
 
-                    if (dnpPkt[8] == hdrCRC[0] && dnpPkt[9] == hdrCRC[1])
+                    if (correctedPkt[8] == hdrCRC[0] && correctedPkt[9] == hdrCRC[1])
                     {
                         //Now we can proceed to the Block CRC
                         //We are limiting ourselves to <= 16 bytes but it could be greater so check it
@@ -780,18 +835,18 @@ namespace FormBasedTCPListenOutstation
                         {
                             byte lenBlock2 = (byte)(userDatalength - (byte)16);
                             //we need two blocks each with its own CRC bytes
-                            byte[] crcBlock1 = dpdu.makeCRC(ref dnpPkt, 10, ((10 + 16) - 1));
-                            byte[] crcBlock2 = dpdu.makeCRC(ref dnpPkt, (10 + 16), (dnpPkt.Count() - 1));
+                            byte[] crcBlock1 = dpdu.makeCRC(ref correctedPkt, 10, ((10 + 16) - 1));
+                            byte[] crcBlock2 = dpdu.makeCRC(ref correctedPkt, (10 + 16), (correctedPkt.Count() - 1));
 
                         }
                         else
                         {
-                            byte[] crcBlock = dpdu.makeCRC(ref dnpPkt, 10, (dnpPkt.Count() - 3));
+                            byte[] crcBlock = dpdu.makeCRC(ref correctedPkt, 10, (correctedPkt.Count() - 3));
 
-                            int crcIndex1 = dnpPkt.Count - 2;
-                            int crcIndex2 = dnpPkt.Count - 1;
+                            int crcIndex1 = correctedPkt.Count - 2;
+                            int crcIndex2 = correctedPkt.Count - 1;
 
-                            if (crcBlock[0] == dnpPkt[crcIndex1] && crcBlock[1] == dnpPkt[crcIndex2])
+                            if (crcBlock[0] == correctedPkt[crcIndex1] && crcBlock[1] == correctedPkt[crcIndex2])
                             {
                                 //we can now proceed with processing the data link function code
                                 Console.WriteLine("Datalink CRC correct!");
@@ -799,20 +854,95 @@ namespace FormBasedTCPListenOutstation
 
                                 for (int i = 0; i < (int)userDatalength; i++)
                                 {
-                                    tpduExtract.Add(dnpPkt[i + 10]);
+                                    tpduExtract.Add(correctedPkt[i + 10]);
                                 }
 
 
 
                             }
+                            else
+                            {
+                                MessageBox.Show("CRC ERROR");
+                            }
                         }
+                        
 
 
                     }
-                }
+                
             }
 
+            if(tpduExtract.Count==0)
+            {
+                MessageBox.Show("CRC ERROR");
+            }
             return (tpduExtract);
+        }
+
+
+        public List<byte> checkDuplicates(List<byte> pkt)
+        {
+            //Check if we have more than one dnp3 pkt
+            int duplicateIndex = 0;
+            bool duplicateFound = false;
+            bool pktCorrected = false;
+            bool nonDNP3 = false;
+            bool emptyPkt = false;
+            List<byte> correctedPkt = new List<byte>();
+
+            if (pkt.Count > 0)
+            {
+                if ((pkt[0] == 0x05) && (pkt[1] == 0x64))
+                {
+                    int i = 2;
+                    for (i = 2; i < pkt.Count; i++)
+                    {
+                        if ((pkt[i] == 0x05) && (pkt[i + 1] == 0x64))
+                        {
+                            MessageBox.Show("Duplicate DNP3 Found!");
+                            duplicateIndex = i - 1;
+                            duplicateFound = true;
+                            break;
+                        }
+                    }
+
+                    if (duplicateFound)
+                    {
+                        if (duplicateIndex > 0)
+                        {
+                            //this means we can fix the pkt by dropping the duplicate pkt
+                            int k = 0;
+                            for (k = 0; k <= duplicateIndex; k++)
+                            {
+                                correctedPkt.Insert(k, pkt[k]);
+                            }
+                            pktCorrected = true;
+                        } 
+                    }
+
+                }
+                else
+                {
+                    nonDNP3 = true;
+                }
+            }
+            else
+            {
+                emptyPkt = true;
+            }
+
+            if(pktCorrected)
+            {
+                pkt.Clear();
+                pkt.AddRange(correctedPkt);
+            }
+            else if(nonDNP3 || emptyPkt)
+            {
+                pkt[0] = 0x00;
+
+            }
+
+            return (pkt);
         }
 
 
@@ -838,13 +968,14 @@ namespace FormBasedTCPListenOutstation
             stationConsole.Text += " Listening to any IP on port " + 20000 + Environment.NewLine;
             while (true)
             {
+                allDone.Reset();
                 try
                 {
                     Console.WriteLine("Run");
+                    Thread.Sleep(10);
                     tcpClient = await listener.AcceptTcpClientAsync();
                     clientIP = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
                     txtBx.Text += "Received connection" + Environment.NewLine;
-                    clientMsg.Clear(); //clear the msg
                     clientMsg = await readFromClientAsync(tcpClient, ct, txtBx);
                     stationConsole.Text += "Received Connect from " + clientIP.ToString();
                     //we got a message from a client, now we process it
@@ -860,6 +991,7 @@ namespace FormBasedTCPListenOutstation
                     }
 
 
+                    clientMsg.Clear(); //clear the msg
 
                 }
                 catch (Exception ex)

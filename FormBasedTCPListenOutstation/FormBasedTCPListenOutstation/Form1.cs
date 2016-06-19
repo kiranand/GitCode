@@ -38,8 +38,7 @@ namespace FormBasedTCPListenOutstation
             try
             {
                 textBox1.Text += "Outstation Start" + Environment.NewLine;
-                service.setLocalAddr(); //set our local addr for later use
-                
+                service.setLocalAddr(textBoxAddresses); //set our local addr for later use 
                 service.Run(textBox1, radioButton1, radioButton2, radioButton3);
                 textBox1.Text += "running GUI" + Environment.NewLine;
 
@@ -76,6 +75,12 @@ namespace FormBasedTCPListenOutstation
                 Console.WriteLine("service.sendISP exception!");
             }
             
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            textBox1.SelectionStart = textBox1.Text.Length;
+            textBox1.ScrollToCaret();
         }
 
         

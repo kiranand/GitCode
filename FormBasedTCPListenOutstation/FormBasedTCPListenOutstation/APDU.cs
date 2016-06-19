@@ -60,6 +60,7 @@ namespace FormBasedTCPListenOutstation
         public byte rangeStartIndex = 0x00; //this is used if range qualifier is '0', i.e. 1-octet start/stop indices used
         public byte rangeStopIndex = 0x00;
         public byte[] binaryOutput = new byte[3]; //This is the Outstation Database we use this to hold 3 binary output values
+        public byte sequence = 0x00;
         
 
         public void setControlFIR(bool value)
@@ -124,8 +125,8 @@ namespace FormBasedTCPListenOutstation
             //then add it to the control byte
 
             if (value <= 0x0F)
-            {
-                controlByte |= value;
+            {  
+                controlByte |= sequence++;
             }
         }
 
