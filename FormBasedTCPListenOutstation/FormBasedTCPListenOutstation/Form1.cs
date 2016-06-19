@@ -68,7 +68,7 @@ namespace FormBasedTCPListenOutstation
             try
             {
                 
-                await service.buildISP(textBoxIpAddrDS.Text, txtBxSplitClientIP.Text);
+                await service.buildISP(textBoxIpAddrDS.Text, txtBxSplitClientIP.Text, textBoxHWAddress.Text);
             }
             catch
             {

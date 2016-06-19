@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -285,6 +286,7 @@ namespace FormBasedTCPListenOutstation
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+                clientMsg.Clear();
                 if (tcpClient.Connected)
                     //tcpClient.Close();
                     return (clientMsg);
@@ -456,9 +458,9 @@ namespace FormBasedTCPListenOutstation
             }
         }
 
-        public async Task buildISP(string dsIpAddr, string splitClientAddr)
+        public async Task buildISP(string dsIpAddr, string splitClientAddr, string hwAddr)
         {
-            if (!String.IsNullOrEmpty(dsIpAddr) && !String.IsNullOrEmpty(splitClientAddr))
+            if (!String.IsNullOrEmpty(dsIpAddr) && !String.IsNullOrEmpty(splitClientAddr) && !String.IsNullOrEmpty(hwAddr)) 
             {
                 splitProtocol = true; //set it
                 //send an ISP to the Outstation
@@ -475,10 +477,19 @@ namespace FormBasedTCPListenOutstation
                     byte[] selfAddrBytes = localAddr.GetAddressBytes();
                     byte[] clientAddrBytes = IPAddress.Parse(splitClientAddr).GetAddressBytes();
 
+                    long value = long.Parse(hwAddr, NumberStyles.HexNumber, CultureInfo.CurrentCulture.NumberFormat);
+                    byte[] macBytes = BitConverter.GetBytes(value); 
+                    Array.Reverse(macBytes);
+                    byte[] macAddress = new byte[6];
+                    for (int i = 0; i <= 5; i++)
+                        macAddress[i] = macBytes[i + 2];
+
                     //params should be in the following order
                     //confirm, unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
-                    ispAPDU.buildAPDU(ref ispPkt, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x07, selfAddrBytes[0],
-                    selfAddrBytes[1], selfAddrBytes[2], selfAddrBytes[3], clientAddrBytes[0], clientAddrBytes[1], clientAddrBytes[2], clientAddrBytes[3]);
+                    ispAPDU.buildAPDU(ref ispPkt, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x0D, selfAddrBytes[0],
+                    selfAddrBytes[1], selfAddrBytes[2], selfAddrBytes[3], clientAddrBytes[0], clientAddrBytes[1],
+                    clientAddrBytes[2], clientAddrBytes[3], macAddress[0], macAddress[1], macAddress[2], macAddress[3],
+                    macAddress[4], macAddress[5]);
 
                     ispTPDU.buildTPDU(ref ispPkt);
                     ispDPDU.buildDPDU(ref ispPkt, 0xC5, 65519, 1); //dst=1, src=65519
@@ -952,6 +963,7 @@ namespace FormBasedTCPListenOutstation
             radio1 = rb1;
             radio2 = rb2;
             radio3 = rb3;
+            bool msgInProcess = false;
             stationConsole = txtBx;
             apdu.binaryOutput[0] = (radio1.Checked) ? (byte)1 : (byte)0;
             apdu.binaryOutput[1] = (radio1.Checked) ? (byte)1 : (byte)0;
@@ -976,18 +988,22 @@ namespace FormBasedTCPListenOutstation
                     tcpClient = await listener.AcceptTcpClientAsync();
                     clientIP = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address;
                     txtBx.Text += "Received connection" + Environment.NewLine;
+                    clientMsg.Clear(); 
                     clientMsg = await readFromClientAsync(tcpClient, ct, txtBx);
                     stationConsole.Text += "Received Connect from " + clientIP.ToString();
+                    List<byte> dnpMsg = new List<byte>();
+                    dnpMsg = fixPkt(clientMsg);
                     //we got a message from a client, now we process it
                     if (splitProtocol && splitClientList.Contains(clientIP))
-                    {
+                    {  
                         //tcpClient.Close(); //close existing connection
-                        byte[] dsMsg = clientMsg.ToArray();
+                        byte[] dsMsg = dnpMsg.ToArray();
                         await sendDSRedirect(dsAddr, dsMsg); //I am redirecting to the Data Server I previously asked to be my Data Server
+                         
                     }
                     else
-                    {
-                        await processClientMsgAsync(clientMsg);
+                    { 
+                        await processClientMsgAsync(dnpMsg); 
                     }
 
 
@@ -1004,8 +1020,40 @@ namespace FormBasedTCPListenOutstation
 
         }
 
+        public List<byte> fixPkt(List<byte> msg)
+        {
+            //Remove duplicate DNP packets if there are any.
+            List<byte> newPkt = new List<byte>();
 
+            var msgArray = msg.ToArray();
+            int validIndex = 0;
+            for(int i=2;i<(msgArray.Length-1);i++)
+            {
+                if(msgArray[i]==0x05)
+                {
+                    if((i+1) < (msgArray.Length-1))
+                    {
+                        if(msgArray[i+1]==0x64)
+                        {
+                            //we found a duplicate pkt.  Copy all elements up till (i-1) and return list
+                            validIndex = i - 1;
+                            break;
+                        }
+                    }
+                }
+            }
 
+            if(validIndex > 0)
+            {
+                for(int j=0;j<=validIndex;j++)
+                {
+                    newPkt.Insert(j,msgArray[j]);
+                }
+            }
+
+            return (newPkt);
+        }
+         
 
 
     }

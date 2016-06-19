@@ -40,6 +40,8 @@
             this.txtBxSplitClientIP = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.textBoxAddresses = new System.Windows.Forms.TextBox();
+            this.textBoxHWAddress = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // button1
@@ -55,12 +57,12 @@
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(9, 169);
+            this.textBox1.Location = new System.Drawing.Point(9, 249);
             this.textBox1.Margin = new System.Windows.Forms.Padding(2);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
             this.textBox1.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.textBox1.Size = new System.Drawing.Size(414, 279);
+            this.textBox1.Size = new System.Drawing.Size(414, 199);
             this.textBox1.TabIndex = 1;
             this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             // 
@@ -143,7 +145,7 @@
             // 
             // txtBxSplitClientIP
             // 
-            this.txtBxSplitClientIP.Location = new System.Drawing.Point(292, 118);
+            this.txtBxSplitClientIP.Location = new System.Drawing.Point(292, 107);
             this.txtBxSplitClientIP.Margin = new System.Windows.Forms.Padding(2);
             this.txtBxSplitClientIP.Multiline = true;
             this.txtBxSplitClientIP.Name = "txtBxSplitClientIP";
@@ -154,12 +156,12 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(305, 148);
+            this.label3.Location = new System.Drawing.Point(305, 137);
             this.label3.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(107, 13);
+            this.label3.Size = new System.Drawing.Size(110, 13);
             this.label3.TabIndex = 11;
-            this.label3.Text = "Split ClientIP Address";
+            this.label3.Text = "Split Client IP Address";
             // 
             // textBoxAddresses
             // 
@@ -171,11 +173,33 @@
             this.textBoxAddresses.Size = new System.Drawing.Size(167, 65);
             this.textBoxAddresses.TabIndex = 12;
             // 
+            // textBoxHWAddress
+            // 
+            this.textBoxHWAddress.Location = new System.Drawing.Point(292, 172);
+            this.textBoxHWAddress.Margin = new System.Windows.Forms.Padding(2);
+            this.textBoxHWAddress.Multiline = true;
+            this.textBoxHWAddress.Name = "textBoxHWAddress";
+            this.textBoxHWAddress.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.textBoxHWAddress.Size = new System.Drawing.Size(137, 28);
+            this.textBoxHWAddress.TabIndex = 13;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(305, 202);
+            this.label4.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(119, 13);
+            this.label4.TabIndex = 14;
+            this.label4.Text = "Split Client HW Address";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(453, 459);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.textBoxHWAddress);
             this.Controls.Add(this.textBoxAddresses);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.txtBxSplitClientIP);
@@ -210,6 +234,8 @@
         private System.Windows.Forms.TextBox txtBxSplitClientIP;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox textBoxAddresses;
+        private System.Windows.Forms.TextBox textBoxHWAddress;
+        private System.Windows.Forms.Label label4;
     }
 }
 

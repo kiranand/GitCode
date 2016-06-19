@@ -326,7 +326,7 @@ namespace FormBasedTCPListenOutstation
                 else if (functionCodeByte == (byte)functionCode.ISP)
                 {
                     //It is a ISP operation
-                    //we need to first make sure that there are 6 bytes of IP addr after the range byte
+                    //we need to first make sure that there are 12 bytes of IP addr + client HW addr after the range byte
                     int arraySize = values.Length;
                     int indexValueNumbers = arraySize - 8; //since we are at index 7 in the array
                     int valuesToWrite = (values[7] - values[6]) + 1;
