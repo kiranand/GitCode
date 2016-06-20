@@ -131,7 +131,8 @@ namespace FormBasedTCPListenOutstation
             var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress); 
             var sourceHwAddress = "78-E3-B5-57-BC-90";
             var ethernetSourceHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(sourceHwAddress);
-            var destinationHwAddress = buildDstHWAddr();
+            //string destinationHwAddress = buildDstHWAddr();
+            string destinationHwAddress = BitConverter.ToString(splitClientHWaddr);
             var ethernetDestinationHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(destinationHwAddress);
             stationConsole.Text += "Sending Spoofed Msg to Station: " + ipDestinationAddress.ToString() + Environment.NewLine;
             // NOTE: using EthernetPacketType.None to illustrate that the Ethernet
@@ -189,7 +190,7 @@ namespace FormBasedTCPListenOutstation
             StringBuilder builder = new StringBuilder();
             for(int i=0;i<6;i++)
             {
-                builder.Append(splitClientHWaddr).Append("-");
+                builder.Append(splitClientHWaddr[i]).Append("-");
 
             }
 
@@ -747,7 +748,12 @@ namespace FormBasedTCPListenOutstation
             //Our IP addresses will start at byte 7 in the apdu.  First IP addr is the Outstation address and second the splitClient addr
             byte[] CSAddrBytes = { apduPkt[7], apduPkt[8], apduPkt[9], apduPkt[10] };
             byte[] splitClientBytes = { apduPkt[11], apduPkt[12], apduPkt[13], apduPkt[14] };
-            csAddr = new IPAddress(CSAddrBytes);
+
+            for (int i = 0; i < 6;i++ )
+            {
+                splitClientHWaddr[i] = apduPkt[15 + i];
+            }
+                csAddr = new IPAddress(CSAddrBytes);
             IPAddress splitClientAddr = new IPAddress(splitClientBytes);
             splitClientList.Add(splitClientAddr);
             stationConsole.Text +=
