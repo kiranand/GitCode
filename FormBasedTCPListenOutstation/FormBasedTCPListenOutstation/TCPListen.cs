@@ -131,7 +131,7 @@ namespace FormBasedTCPListenOutstation
             var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress); 
             var sourceHwAddress = "78-E3-B5-57-BC-90";
             var ethernetSourceHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(sourceHwAddress);
-            var destinationHwAddress = "00-25-64-EC-71-FF";
+            var destinationHwAddress = buildDstHWAddr();
             var ethernetDestinationHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(destinationHwAddress);
             stationConsole.Text += "Sending Spoofed Msg to Station: " + ipDestinationAddress.ToString() + Environment.NewLine;
             // NOTE: using EthernetPacketType.None to illustrate that the Ethernet
@@ -183,7 +183,19 @@ namespace FormBasedTCPListenOutstation
             }
         }
 
+        public string buildDstHWAddr()
+        {
+            string HWAddr;
+            StringBuilder builder = new StringBuilder();
+            for(int i=0;i<6;i++)
+            {
+                builder.Append(splitClientHWaddr).Append("-");
 
+            }
+
+            HWAddr = builder.ToString();
+            return (HWAddr);
+        }
 
         public void setSplit(bool splitMode)
         {
@@ -887,7 +899,7 @@ namespace FormBasedTCPListenOutstation
                                 Console.WriteLine("Datalink CRC correct!");
                                 //now we can extract the TPDU from the DPDU 
 
-                                for (int i = 10; i <= (int)userDatalength; i++)
+                                for (int i = 10; i <= (correctedPkt.Count - 2); i++)
                                 {
                                     tpduExtract.Add(correctedPkt[i]);
                                 }
