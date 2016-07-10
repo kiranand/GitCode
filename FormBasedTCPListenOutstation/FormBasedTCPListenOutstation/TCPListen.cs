@@ -42,6 +42,10 @@ namespace FormBasedTCPListenOutstation
         bool splitProtocol = false;
         bool ispPkt = false;
         SharpPcap.CaptureDeviceList devices;
+        ICaptureDevice transmitDevice;
+        string filter;
+
+        PhysicalAddress address;
 
         public void setLocalAddr(TextBox addresses)
         {
@@ -67,7 +71,7 @@ namespace FormBasedTCPListenOutstation
                        }
                    }
 
-                   PhysicalAddress address = adapter.GetPhysicalAddress();
+                   address = adapter.GetPhysicalAddress();
                    byte[] bytes = address.GetAddressBytes();
                    for (int i = 0; i < bytes.Length; i++)
                    {
@@ -105,40 +109,75 @@ namespace FormBasedTCPListenOutstation
                    }
                }
 
-               // Retrieve the device list
+             // Print SharpPcap version 
+            string ver = SharpPcap.Version.VersionString;
+            stationConsole.Text += "SharpPcap {0}, Example1.IfList.cs" + ver + Environment.NewLine; 
 
-               devices = SharpPcap.CaptureDeviceList.Instance;
-
+            // Retrieve the device list 
+            devices = SharpPcap.CaptureDeviceList.Instance;
+           
             // If no devices were found print an error
             if (devices.Count < 1)
             {
-                stationConsole.Text+= "No devices were found on this machine" + Environment.NewLine;
+                stationConsole.Text += "No devices were found on this machine" + Environment.NewLine;
                 return;
             }
+            else
+            {
+                stationConsole.Text += "Device count = " + devices.Count + Environment.NewLine;
+            }
 
+            //Console.WriteLine("\nThe following devices are available on this machine:");
+            //Console.WriteLine("----------------------------------------------------\n");
+
+            // Print out the available network devices
+            //foreach (ICaptureDevice dev in devices)
+            //    Console.WriteLine("{0}\n", dev.ToString());
+
+            
+
+            // Open the device for capturing
+            int readTimeoutMilliseconds = 1000;
+            ICaptureDevice device;
+             filter = "port 20000";
+             string localInterfaceUsed = address.ToString();
+
+             for (ushort i = 0; i < devices.Count; i++)
+             {
+
+                 device = devices[i]; 
+                 device.Open(DeviceMode.Promiscuous, readTimeoutMilliseconds);
+                 var macAddress = device.MacAddress;
+                 string hwAddr = macAddress.ToString();
+                 if (hwAddr.Equals(localInterfaceUsed))
+                 {
+                     transmitDevice = device;
+                 }
+             }
+           
         }
 
-        void sendWithSpoofedAddress(IPAddress addr, byte[] msg)
+        public void sendWithSpoofedAddress(IPAddress addr, byte[] msg)
         {
             
             ushort tcpSourcePort = 30000;
             ushort tcpDestinationPort = 20000; 
             var tcpPacket = new TcpPacket(tcpSourcePort, tcpDestinationPort);
+            stationConsole.Text += "Sending Spoof Data " + BitConverter.ToString(msg) + Environment.NewLine;
             tcpPacket.PayloadData = msg;
             //var ipSourceAddress = System.Net.IPAddress.Parse("192.168.1.225");
             var ipSourceAddress = addr;
             var ipDestinationAddress = System.Net.IPAddress.Parse(splitClientList[0].ToString());
             var ipPacket = new IPv4Packet(ipSourceAddress, ipDestinationAddress); 
-            var sourceHwAddress = "78-E3-B5-57-BC-90";
-            var ethernetSourceHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(sourceHwAddress);
             //string destinationHwAddress = buildDstHWAddr();
             string destinationHwAddress = BitConverter.ToString(splitClientHWaddr);
             var ethernetDestinationHwAddress = System.Net.NetworkInformation.PhysicalAddress.Parse(destinationHwAddress);
-            stationConsole.Text += "Sending Spoofed Msg to Station: " + ipDestinationAddress.ToString() + Environment.NewLine;
+            stationConsole.Text += "Sending Spoofed Msg to Station: " + Environment.NewLine + "IP: "+ ipDestinationAddress.ToString() + 
+                "HW: "+ ethernetDestinationHwAddress.ToString() + Environment.NewLine;
             // NOTE: using EthernetPacketType.None to illustrate that the Ethernet
             //       protocol type is updated based on the packet payload that is
             //       assigned to that particular Ethernet packet
-            var ethernetPacket = new EthernetPacket(ethernetSourceHwAddress,
+            var ethernetPacket = new EthernetPacket(address,
                 ethernetDestinationHwAddress,
                 EthernetPacketType.None);
 
@@ -150,38 +189,20 @@ namespace FormBasedTCPListenOutstation
             Console.WriteLine(ethernetPacket.ToString());
 
             // to retrieve the bytes that represent this newly created EthernetPacket use the Bytes property
-            byte[] packetBytes = ethernetPacket.Bytes;
+            byte[] packetBytes = ethernetPacket.Bytes; 
 
-            // Open the device
-            // Extract a device from the list
-
-
-            // Open the device for capturing
-            int readTimeoutMilliseconds = 1000;
-            ICaptureDevice device;
-            string localInterfaceUsed = "78E3B557BC90";
-
-            for (ushort i = 0; i < 3; i++)
-            {  
-                device = devices[i]; 
-                device.Open(DeviceMode.Promiscuous, readTimeoutMilliseconds);
-                var macAddress = device.MacAddress; 
-                string hwAddr = macAddress.ToString();
-                if (hwAddr.Equals(localInterfaceUsed))
-                {
-                    try
-                    {
-                        // Send the packet out the network device
-                        device.SendPacket(packetBytes);
-                        Console.WriteLine("-- Packet sent successfuly.");
-                        device.Close();
-                    }
-                    catch (Exception eX)
-                    {
-                        Console.Write("Pkt send failed" + Environment.NewLine);
-                    }
-                }
+            try
+            {
+                // Send the packet out the network device
+                transmitDevice.SendPacket(packetBytes);
+                Console.WriteLine("-- Packet sent successfuly.");
+                transmitDevice.Close();
             }
+            catch (Exception eX)
+            {
+                Console.Write("Pkt send failed" + Environment.NewLine);
+            }
+  
         }
 
         public string buildDstHWAddr()
@@ -491,19 +512,17 @@ namespace FormBasedTCPListenOutstation
                     byte[] selfAddrBytes = localAddr.GetAddressBytes();
                     byte[] clientAddrBytes = IPAddress.Parse(splitClientAddr).GetAddressBytes();
 
-                    long value = long.Parse(hwAddr, NumberStyles.HexNumber, CultureInfo.CurrentCulture.NumberFormat);
-                    byte[] macBytes = BitConverter.GetBytes(value); 
-                    Array.Reverse(macBytes);
-                    byte[] macAddress = new byte[6];
-                    for (int i = 0; i <= 5; i++)
-                        macAddress[i] = macBytes[i + 2];
+                    //long value = long.Parse(hwAddr, NumberStyles.HexNumber, CultureInfo.CurrentCulture.NumberFormat);
+                    byte[] macBytes = hwAddr.Split('-').Select(x => Convert.ToByte(x, 16)).ToArray(); 
+                    Array.Reverse(macBytes); 
+                   
 
                     //params should be in the following order
                     //confirm, unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
                     ispAPDU.buildAPDU(ref ispPkt, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x0D, selfAddrBytes[0],
                     selfAddrBytes[1], selfAddrBytes[2], selfAddrBytes[3], clientAddrBytes[0], clientAddrBytes[1],
-                    clientAddrBytes[2], clientAddrBytes[3], macAddress[0], macAddress[1], macAddress[2], macAddress[3],
-                    macAddress[4], macAddress[5]);
+                    clientAddrBytes[2], clientAddrBytes[3], macBytes[0], macBytes[1], macBytes[2], macBytes[3],
+                    macBytes[4], macBytes[5]);
 
                     ispTPDU.buildTPDU(ref ispPkt);
                     ispDPDU.buildDPDU(ref ispPkt, 0xC5, 65519, 1); //dst=1, src=65519
