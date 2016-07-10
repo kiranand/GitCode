@@ -151,7 +151,7 @@ namespace FormBasedTCPListenOutstation
                  string hwAddr = macAddress.ToString();
                  if (hwAddr.Equals(localInterfaceUsed))
                  {
-                     transmitDevice = device;
+                     transmitDevice = device; 
                  }
              }
            
