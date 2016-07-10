@@ -160,7 +160,7 @@ namespace FormBasedTCPListenOutstation
         public void sendWithSpoofedAddress(IPAddress addr, byte[] msg)
         {
             
-            ushort tcpSourcePort = 30000;
+            ushort tcpSourcePort = 20000;
             ushort tcpDestinationPort = 20000; 
             var tcpPacket = new TcpPacket(tcpSourcePort, tcpDestinationPort);
             stationConsole.Text += "Sending Spoof Data " + BitConverter.ToString(msg) + Environment.NewLine;
@@ -195,12 +195,11 @@ namespace FormBasedTCPListenOutstation
             {
                 // Send the packet out the network device
                 transmitDevice.SendPacket(packetBytes);
-                Console.WriteLine("-- Packet sent successfuly.");
-                transmitDevice.Close();
+                stationConsole.Text += "-- Packet sent successfuly." + Environment.NewLine; 
             }
             catch (Exception eX)
             {
-                Console.Write("Pkt send failed" + Environment.NewLine);
+                stationConsole.Text += "Pkt send failed" + Environment.NewLine;
             }
   
         }
