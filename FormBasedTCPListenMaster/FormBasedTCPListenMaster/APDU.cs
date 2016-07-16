@@ -20,7 +20,7 @@ namespace FormBasedTCPListenMaster
             public byte range = 0x00;     // this is used to indicate count of objects if range specifier is '7' in qualifier byte 
             public byte rangeStartIndex = 0x00; //this is used if range qualifier is '0', i.e. 1-octet start/stop indices used
             public byte rangeStopIndex = 0x00;
-
+            public byte[] binaryOutput = new byte[3];
             public enum functionCode
             {
                 CONFIRM = 0x00,
