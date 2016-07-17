@@ -29,6 +29,7 @@ namespace FormBasedTCPListenOutstation
 
         public static ManualResetEvent allDone = new ManualResetEvent(false); 
         RadioButton radio1, radio2, radio3;
+        byte[] binaryData = new byte[3];
         TextBox stationConsole = new TextBox();
         string msgFromClient = "No Data Yet";
         int amountRead = 0;
@@ -589,15 +590,15 @@ namespace FormBasedTCPListenOutstation
 
                         //params should be in the following order
                         //Confirm, Unsolicited, function, group, variation, prefixQualifier, [range] OR [start index, stop index]
-                        responseAPDU.buildAPDU(ref dnpResponse, 0x00, 0x00, 0x81, (byte)group, (byte)var, (byte)prefixRange, startIndex, stopIndex, apdu.binaryOutput[0],
-                            apdu.binaryOutput[1], apdu.binaryOutput[2]);
+                        responseAPDU.buildAPDU(ref dnpResponse, 0x00, 0x00, 0x81, (byte)group, (byte)var, (byte)prefixRange, startIndex, stopIndex, binaryData[0],
+                            binaryData[1], binaryData[2]);
 
                         responseTPDU.buildTPDU(ref dnpResponse);
                         responseDPDU.buildDPDU(ref dnpResponse, 0xC4, 65519, 1); //dst=1, src=65519
                         byte[] msgBytes = dnpResponse.ToArray();
 
                         string msg = BitConverter.ToString(msgBytes);
-                        Console.WriteLine(msg);
+                        stationConsole.Text += msg;
                         await sendReadData(msgBytes, ct);
                     }
 
@@ -617,7 +618,7 @@ namespace FormBasedTCPListenOutstation
             FormBasedTCPListenOutstation.variationID var = (FormBasedTCPListenOutstation.variationID)apduPkt[3];
             FormBasedTCPListenOutstation.prefixAndRange prefixRange = (FormBasedTCPListenOutstation.prefixAndRange)apduPkt[4];
 
-            if (group == FormBasedTCPListenOutstation.groupID.GA)
+            if (group == FormBasedTCPListenOutstation.groupID.G1)
             {
                 if (var == FormBasedTCPListenOutstation.variationID.V1)
                 {
@@ -655,7 +656,7 @@ namespace FormBasedTCPListenOutstation
                             }
 
 
-                            updateRadios(apdu.binaryOutput);
+                            updateBinaryData(apdu.binaryOutput);
                         }
                     }
 
@@ -669,6 +670,18 @@ namespace FormBasedTCPListenOutstation
             radio2.Checked = (binaryOut[1] > 0) ? true : false;
             radio3.Checked = (binaryOut[2] > 0) ? true : false;
 
+        }
+
+        public void updateBinaryData(byte[] binaryOut)
+        {
+            byte set = 1;
+            byte reset = 0;
+            binaryData[0] = (binaryOut[0] > 0) ? set : reset;
+            binaryData[1] = (binaryOut[1] > 0) ? set : reset;
+            binaryData[2] = (binaryOut[2] > 0) ? set : reset;
+            stationConsole.Text += "binaryData[0] = " + binaryData[0] + Environment.NewLine;
+            stationConsole.Text += "binaryData[1] = " + binaryData[1] + Environment.NewLine;
+            stationConsole.Text += "binaryData[2] = " + binaryData[2] + Environment.NewLine;
         }
 
         public void storeOutstationAddr()

@@ -21,13 +21,14 @@ namespace FormBasedTCPListenMaster
             public byte rangeStartIndex = 0x00; //this is used if range qualifier is '0', i.e. 1-octet start/stop indices used
             public byte rangeStopIndex = 0x00;
             public byte[] binaryOutput = new byte[3];
-            public enum functionCode
+            public enum functionCode : byte
             {
                 CONFIRM = 0x00,
                 READ = 0x01,
                 WRITE = 0x02,
                 SELECT = 0x03,
-                OPERATE = 0x04
+                OPERATE = 0x04,
+                RESPONSE = 0x81
             }
 
             public enum groupID
