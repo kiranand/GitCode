@@ -70,9 +70,10 @@ namespace FormBasedTCPListenMaster
                         if (dnp3Pkt.Count > 0)
                         {
                             Console.WriteLine("DNP3 PKT RCVD:" + Environment.NewLine); 
-                            string consoleMsg = BitConverter.ToString(dnp3Pkt.ToArray()) + Environment.NewLine;
-                            stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text += consoleMsg));
-                            pktFromSharpPCapRcvd = true;
+                            //string consoleMsg = BitConverter.ToString(dnp3Pkt.ToArray()) + Environment.NewLine;
+                            //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text += consoleMsg));
+                            //Console.WriteLine(consoleMsg);
+                            pktFromSharpPCapRcvd = true; 
                             Thread.Sleep(100);
                         }
                         
@@ -98,8 +99,7 @@ namespace FormBasedTCPListenMaster
            
             while (true)
             {
-                bool shouldSleep = true;
-
+                bool shouldSleep = true; 
                 lock (QueueLock)
                 {
                     if (dnp3Pkt.Count() != 0)
@@ -122,8 +122,8 @@ namespace FormBasedTCPListenMaster
                     }
 
                     Console.WriteLine("BackgroundThread: ourQueue.Count is {0}", pktFromSharpPCap.Count);
-                    stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text += "BackgroundThread: ourQueue.Count is {0}" + 
-                        pktFromSharpPCap.Count));
+                    //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text += "BackgroundThread: ourQueue.Count is {0}" + 
+                      //  pktFromSharpPCap.Count));
                      processClientMsgSync(pktFromSharpPCap);
                   /*  foreach (var packet in ourQueue)
                     {
@@ -572,7 +572,7 @@ namespace FormBasedTCPListenMaster
                         break;
 
                     case FormBasedTCPListenMaster.APDU.functionCode.RESPONSE:
-                        stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = "Process DNP Response" + Environment.NewLine));
+                        //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = "Process DNP Response" + Environment.NewLine));
                         processAPDUResponse(apduPkt);
                         break;
 
@@ -611,7 +611,7 @@ namespace FormBasedTCPListenMaster
 
                 dataFromOutstation.Enqueue(data);
                 Console.WriteLine("Pkt Enqueued" + Environment.NewLine);
-                pktToProcess.Set();
+                pktToProcess.Set(); 
             }
             else
             {   
