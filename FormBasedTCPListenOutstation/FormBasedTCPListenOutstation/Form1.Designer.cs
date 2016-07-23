@@ -42,6 +42,8 @@
             this.textBoxAddresses = new System.Windows.Forms.TextBox();
             this.textBoxHWAddress = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.txtBoxCPULoad = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // button1
@@ -69,7 +71,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(161, 154);
+            this.label1.Location = new System.Drawing.Point(169, 450);
             this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(58, 13);
@@ -190,11 +192,33 @@
             this.label4.TabIndex = 14;
             this.label4.Text = "Split Client HW Address";
             // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(59, 184);
+            this.label5.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(56, 13);
+            this.label5.TabIndex = 16;
+            this.label5.Text = "CPU Load";
+            // 
+            // txtBoxCPULoad
+            // 
+            this.txtBoxCPULoad.Location = new System.Drawing.Point(22, 199);
+            this.txtBoxCPULoad.Margin = new System.Windows.Forms.Padding(2);
+            this.txtBoxCPULoad.Multiline = true;
+            this.txtBoxCPULoad.Name = "txtBoxCPULoad";
+            this.txtBoxCPULoad.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.txtBoxCPULoad.Size = new System.Drawing.Size(137, 28);
+            this.txtBoxCPULoad.TabIndex = 17;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(453, 459);
+            this.ClientSize = new System.Drawing.Size(453, 476);
+            this.Controls.Add(this.txtBoxCPULoad);
+            this.Controls.Add(this.label5);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.textBoxHWAddress);
             this.Controls.Add(this.textBoxAddresses);
@@ -212,6 +236,7 @@
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form1";
             this.Text = "Form1";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -233,6 +258,8 @@
         private System.Windows.Forms.TextBox textBoxAddresses;
         private System.Windows.Forms.TextBox textBoxHWAddress;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.TextBox txtBoxCPULoad;
     }
 }
 

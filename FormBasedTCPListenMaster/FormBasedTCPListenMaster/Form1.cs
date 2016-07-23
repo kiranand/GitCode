@@ -13,6 +13,7 @@ using System.Net.Sockets;
 using System.IO;
 using System.Diagnostics; 
 using System.Collections.Concurrent;
+using System.Text;
 
 namespace FormBasedTCPListenMaster
 {
@@ -23,10 +24,23 @@ namespace FormBasedTCPListenMaster
         public static byte[] dataToSend = new byte[3];
         public static byte[] dataFromOutStation = new byte[3];
         public static ConcurrentQueue<string> unitTestComplete = new ConcurrentQueue<string>();
-        public static AutoResetEvent unitTestDone = new AutoResetEvent(false);
-       
+        public static AutoResetEvent unitTestDone = new AutoResetEvent(false);  
+        public static string pathString;
+        
+        
+ 
+
+
         public Form1()
         {
+            string myFileName = String.Format("{0}__{1}", DateTime.Now.ToString("yyyyMMddhhnnss"), "dnpTest");
+             pathString = Path.Combine("C:\\Users\\Anand\\Documents\\DNPTestOut", myFileName);
+            
+            if (!File.Exists(pathString))
+            {
+                // Create a file to write to. 
+                File.WriteAllText(pathString, "Start Test\n\r");
+            }
             InitializeComponent();
             client = new masterTCPClient(); 
         }
@@ -58,6 +72,8 @@ namespace FormBasedTCPListenMaster
                 string reply = await runClientAsync(dataToSend);
                 textBox1.Text += reply;
             }*/
+
+            masterTCPClient.dnp3Pkt.Clear();
             client.setLocalAddr(textBoxAddresses);
             textBox1.Text += "Master Started on addr: " + client.localAddr + Environment.NewLine;
             client.listenForOutstations(textBox1);
@@ -136,16 +152,17 @@ namespace FormBasedTCPListenMaster
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             client.CloseSocket(); 
+            Environment.Exit(Environment.ExitCode);
         }
 
         private async void button1_Click(object sender, EventArgs e)
         {
-            //Write values of 001, 010, 011 etc to the Outstation and read it back 
+            //Write values of 011 to the Outstation and read it back 
             dataToSend[0] = 0;
             dataToSend[1] = 1;
             dataToSend[2] = 1;
-            bool unitTestCompleted = true; //set it true to kick off
-            int iterations = 0;
+            bool unitTestCompleted = false;  
+
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start(); 
             for (int i = 0; i < 3; i++)
@@ -175,6 +192,8 @@ namespace FormBasedTCPListenMaster
                 {
                     textBox1.Text += "ERROR Recvd NULL Pkt" + Environment.NewLine; 
                 }
+
+                File.AppendAllText(pathString, testStatus);
             }
 
             stopWatch.Stop();
@@ -184,6 +203,7 @@ namespace FormBasedTCPListenMaster
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
             textBox1.Text += "Test Run Time:  " + elapsedTime + Environment.NewLine;
+            File.AppendAllText(pathString, (elapsedTime + Environment.NewLine));
             stopWatch.Reset();
                 
         }
