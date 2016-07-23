@@ -37,6 +37,8 @@
             this.txtBoxReadIPAddr = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.textBoxAddresses = new System.Windows.Forms.TextBox();
+            this.btnRunTest = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnStartMaster
@@ -131,11 +133,31 @@
             this.textBoxAddresses.Size = new System.Drawing.Size(252, 50);
             this.textBoxAddresses.TabIndex = 8;
             // 
+            // btnRunTest
+            // 
+            this.btnRunTest.Location = new System.Drawing.Point(0, 0);
+            this.btnRunTest.Name = "btnRunTest";
+            this.btnRunTest.Size = new System.Drawing.Size(75, 23);
+            this.btnRunTest.TabIndex = 0;
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(124, 116);
+            this.button1.Margin = new System.Windows.Forms.Padding(2);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(87, 65);
+            this.button1.TabIndex = 9;
+            this.button1.Text = "Run Test";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(341, 410);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btnRunTest);
             this.Controls.Add(this.textBoxAddresses);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.txtBoxReadIPAddr);
@@ -148,6 +170,7 @@
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form1";
             this.Text = "DNP Master";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -164,6 +187,8 @@
         private System.Windows.Forms.TextBox txtBoxReadIPAddr;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBoxAddresses;
+        private System.Windows.Forms.Button btnRunTest;
+        private System.Windows.Forms.Button button1;
     }
 }
 
