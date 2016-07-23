@@ -37,7 +37,6 @@
             this.txtBoxReadIPAddr = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.textBoxAddresses = new System.Windows.Forms.TextBox();
-            this.btnRunTest = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
@@ -133,13 +132,6 @@
             this.textBoxAddresses.Size = new System.Drawing.Size(252, 50);
             this.textBoxAddresses.TabIndex = 8;
             // 
-            // btnRunTest
-            // 
-            this.btnRunTest.Location = new System.Drawing.Point(0, 0);
-            this.btnRunTest.Name = "btnRunTest";
-            this.btnRunTest.Size = new System.Drawing.Size(75, 23);
-            this.btnRunTest.TabIndex = 0;
-            // 
             // button1
             // 
             this.button1.Location = new System.Drawing.Point(124, 116);
@@ -157,7 +149,6 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(341, 410);
             this.Controls.Add(this.button1);
-            this.Controls.Add(this.btnRunTest);
             this.Controls.Add(this.textBoxAddresses);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.txtBoxReadIPAddr);
@@ -187,7 +178,6 @@
         private System.Windows.Forms.TextBox txtBoxReadIPAddr;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textBoxAddresses;
-        private System.Windows.Forms.Button btnRunTest;
         private System.Windows.Forms.Button button1;
     }
 }
