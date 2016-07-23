@@ -11,7 +11,8 @@ using System.Threading;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
-using System.Diagnostics;
+using System.Diagnostics; 
+using System.Collections.Concurrent;
 
 namespace FormBasedTCPListenMaster
 {
@@ -21,6 +22,8 @@ namespace FormBasedTCPListenMaster
 
         public static byte[] dataToSend = new byte[3];
         public static byte[] dataFromOutStation = new byte[3];
+        public static ConcurrentQueue<string> unitTestComplete = new ConcurrentQueue<string>();
+        public static AutoResetEvent unitTestDone = new AutoResetEvent(false);
        
         public Form1()
         {
@@ -33,7 +36,7 @@ namespace FormBasedTCPListenMaster
             CancellationToken ct;
            
             Task<string> tsResponse = client.SendRequest(msg, addr, ct);
-           
+            Console.WriteLine("Sending DNP3 pkt" + Environment.NewLine);
             return (tsResponse);
         }
 
@@ -58,14 +61,15 @@ namespace FormBasedTCPListenMaster
             client.setLocalAddr(textBoxAddresses);
             textBox1.Text += "Master Started on addr: " + client.localAddr + Environment.NewLine;
             client.listenForOutstations(textBox1);
+            Thread checkResponse = new Thread(new ThreadStart(checkDNPReqResp));
+            checkResponse.Start();
              
         }
 
      
         private async void btnWriteData_Click(object sender, EventArgs e)
         {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start(); 
+            
             //Send a write packet to the Outstation
             IPAddress addr = IPAddress.Parse(txtBoxWriteIPAddr.Text);
             List<byte> dnpPkt = new List<byte>(); 
@@ -77,14 +81,7 @@ namespace FormBasedTCPListenMaster
              
             string response = await runClientWriteAsync(msgBytes, addr);
              
-            stopWatch.Stop();
-            TimeSpan ts = stopWatch.Elapsed;
-            // Format and display the TimeSpan value.
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                ts.Hours, ts.Minutes, ts.Seconds,
-                ts.Milliseconds / 10);
-            textBox1.Text += response + Environment.NewLine;
-            stopWatch.Reset();
+            
 
             
         }
@@ -146,21 +143,49 @@ namespace FormBasedTCPListenMaster
             //Write values of 001, 010, 011 etc to the Outstation and read it back 
             dataToSend[0] = 0;
             dataToSend[1] = 1;
-            dataToSend[2] = 1; 
-            List<byte> dnpPkt = new List<byte>();
-            buildPkt(ref dnpPkt, (byte)APDU.functionCode.WRITE);
-            byte[] msgBytes = dnpPkt.ToArray();
-            IPAddress addr = IPAddress.Parse(txtBoxWriteIPAddr.Text);
-            //string msg = BitConverter.ToString(msgBytes);
-            //Console.WriteLine(msg);   
-            string response = await runClientWriteAsync(msgBytes, addr);
-            //Thread.Sleep(2000);
-            dnpPkt.Clear();
-            buildPkt(ref dnpPkt, (byte)APDU.functionCode.READ);
-            msgBytes = dnpPkt.ToArray();
-            response = await runClientWriteAsync(msgBytes, addr);
-            Thread checkResponse = new Thread(new ThreadStart(checkDNPReqResp));
-            checkResponse.Start();
+            dataToSend[2] = 1;
+            bool unitTestCompleted = true; //set it true to kick off
+            int iterations = 0;
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start(); 
+            for (int i = 0; i < 3; i++)
+            {  
+                string testStatus = "Queue Empty" + Environment.NewLine; 
+                List<byte> dnpPkt = new List<byte>();
+                buildPkt(ref dnpPkt, (byte)APDU.functionCode.WRITE);
+                byte[] msgBytes = dnpPkt.ToArray();
+                IPAddress addr = IPAddress.Parse(txtBoxWriteIPAddr.Text);
+                //string msg = BitConverter.ToString(msgBytes);
+                //Console.WriteLine(msg);   
+                string response = await runClientWriteAsync(msgBytes, addr);
+                textBox1.Text += "Sending Write for Test = " + i + Environment.NewLine;
+                dnpPkt.Clear();
+                buildPkt(ref dnpPkt, (byte)APDU.functionCode.READ);
+                msgBytes = dnpPkt.ToArray();
+                response = await runClientWriteAsync(msgBytes, addr);
+                textBox1.Text += "Sending Read for Test = " + i + Environment.NewLine;
+                unitTestDone.WaitOne();
+
+                unitTestCompleted = unitTestComplete.TryDequeue(out testStatus);
+                if (unitTestCompleted)
+                {
+                    textBox1.Text += testStatus;
+                }
+                else
+                {
+                    textBox1.Text += "ERROR Recvd NULL Pkt" + Environment.NewLine; 
+                }
+            }
+
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                ts.Hours, ts.Minutes, ts.Seconds,
+                ts.Milliseconds / 10);
+            textBox1.Text += "Test Run Time:  " + elapsedTime + Environment.NewLine;
+            stopWatch.Reset();
+                
         }
 
         void checkDNPReqResp()
@@ -170,12 +195,14 @@ namespace FormBasedTCPListenMaster
             {
                 byte[] dataRecvd = new byte[3];
                 bool equal = false;
+                Console.WriteLine("Waiting for pkt" + Environment.NewLine);
+                client.pktToProcess.WaitOne();
                 bool dataIn = masterTCPClient.dataFromOutstation.TryDequeue(out dataRecvd);
                
                 if (dataIn)
                 {
                     string dataInMsg = BitConverter.ToString(dataRecvd);
-                    textBox1.Invoke((MethodInvoker)(() => textBox1.Text += dataInMsg + Environment.NewLine));
+                    //textBox1.Invoke((MethodInvoker)(() => textBox1.Text += dataInMsg + Environment.NewLine));
                     for (int i = 0; i < 3; i++)
                     {
                         if (dataRecvd[i] == dataToSend[i])
@@ -185,11 +212,7 @@ namespace FormBasedTCPListenMaster
                         }
                         else
                         {
-                            equal = false;
-                            dataWritten = BitConverter.ToString(dataToSend);
-                            dataRead = BitConverter.ToString(dataRecvd);
-                            unitTestStatus = "FAIL: Wrote: " + dataWritten + "  Read: " + dataRead; 
-                            textBox1.Invoke((MethodInvoker)(() => textBox1.Text += " PASS: PktSent: " + dataWritten + " PktRcvd: " + dataRead));
+                            equal = false; 
                             break;
                         }
                     }
@@ -198,13 +221,24 @@ namespace FormBasedTCPListenMaster
                     {
                          dataWritten = BitConverter.ToString(dataToSend);
                          dataRead = BitConverter.ToString(dataRecvd);
-                         unitTestStatus = "PASS: Wrote: " + dataWritten + "  Read: " + dataRead; 
-                         textBox1.Invoke((MethodInvoker)(() => textBox1.Text += " PASS: PktSent: " + dataWritten + " PktRcvd: " + dataRead));
+                         unitTestStatus = "PASS: Wrote: " + dataWritten + "  Read: " + dataRead + Environment.NewLine; 
+                         
                     }
+                    else
+                    {
+                        dataWritten = BitConverter.ToString(dataToSend);
+                        dataRead = BitConverter.ToString(dataRecvd);
+                        unitTestStatus = "FAIL: Wrote: " + dataWritten + "  Read: " + dataRead + Environment.NewLine; 
+                    }
+
+                    unitTestComplete.Enqueue(unitTestStatus);
+                    //textBox1.Invoke((MethodInvoker)(() => textBox1.Text +=unitTestStatus)); 
+                    Console.WriteLine(unitTestStatus);
+                    unitTestDone.Set();
                 }
                 else
                 {
-                    Thread.Sleep(2000);
+                    Thread.Sleep(100);
                 }
                  
                  
