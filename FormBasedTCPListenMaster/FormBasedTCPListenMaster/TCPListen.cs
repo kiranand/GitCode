@@ -615,7 +615,7 @@ namespace FormBasedTCPListenMaster
             }
             else
             {   
-                stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = "ERROR EMPTY APDU!" + Environment.NewLine));
+                //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = "ERROR EMPTY APDU!" + Environment.NewLine));
             }
         }
 
@@ -811,7 +811,7 @@ namespace FormBasedTCPListenMaster
 
             if (tpduExtract.Count == 0)
             {
-                MessageBox.Show("CRC ERROR");
+                //MessageBox.Show("CRC ERROR");
             }
             return (tpduExtract);
         }
@@ -895,8 +895,8 @@ namespace FormBasedTCPListenMaster
            
                 if (pktFromSharpPCapRcvd == true)
                 {    
-                    stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text +=
-                           "processClientMsgAsync" + Environment.NewLine));
+                    //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text +=
+                      //     "processClientMsgAsync" + Environment.NewLine));
 
                     List<byte> dpduPkt = new List<byte>();
                     List<byte> tpduPkt = new List<byte>();
@@ -904,8 +904,8 @@ namespace FormBasedTCPListenMaster
 
                     if (msg.Count == 0)
                     { 
-                        stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text += 
-                            "ERROR!  EMPTY PKT RCVD!" + Environment.NewLine));
+                        //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text += 
+                          //  "ERROR!  EMPTY PKT RCVD!" + Environment.NewLine));
                     }
 
                     if (msg[0] != 0x05)
@@ -917,8 +917,8 @@ namespace FormBasedTCPListenMaster
                         tpduPkt =  await processDPDU(msg);
                         if (tpduPkt.Count == 0)
                         {
-                            stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text +=
-                                "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine));
+                            //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text +=
+                              //  "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine));
 
                         }
                         else
@@ -926,8 +926,8 @@ namespace FormBasedTCPListenMaster
                             apduPkt = await processTPDU(tpduPkt);
                             if (apduPkt.Count == 0)
                             {
-                                stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text +=
-                                    "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine));
+                                //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text +=
+                                  //  "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine));
                             }
                             else
                             {
@@ -956,7 +956,7 @@ namespace FormBasedTCPListenMaster
                 if (msg.Count == 0)
                 {
                     //stationConsole.Text += "ERROR!  EMPTY PKT RCVD!" + Environment.NewLine;
-                    stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = "ERROR!  EMPTY PKT RCVD!" + Environment.NewLine));
+                    //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = "ERROR!  EMPTY PKT RCVD!" + Environment.NewLine));
                 }
 
                 if (msg[0] != 0x05)
@@ -969,7 +969,7 @@ namespace FormBasedTCPListenMaster
                     if (tpduPkt.Count == 0)
                     {
                         //stationConsole.Text += "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine;
-                        stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine));
+                        //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine));
                     }
                     else
                     {
@@ -977,8 +977,8 @@ namespace FormBasedTCPListenMaster
                         if (apduPkt.Count == 0)
                         {
                             //stationConsole.Text += "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine;
-                            stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = 
-                                "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine));
+                            //stationConsole.Invoke((MethodInvoker)(() => stationConsole.Text = 
+                              //  "ERROR!  EMPTY APDU PKT RCVD!" + Environment.NewLine));
                         }
                         else
                         {

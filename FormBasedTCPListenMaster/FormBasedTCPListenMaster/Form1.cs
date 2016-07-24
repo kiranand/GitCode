@@ -33,13 +33,13 @@ namespace FormBasedTCPListenMaster
 
         public Form1()
         {
-            string myFileName = String.Format("{0}__{1}", DateTime.Now.ToString("yyyyMMddhhnnss"), "dnpTest");
+            string myFileName = String.Format("{0}__{1}", DateTime.Now.ToString("yyyyMMddhhnnss"), "dnpTest.txt");
              pathString = Path.Combine("C:\\Users\\Anand\\Documents\\DNPTestOut", myFileName);
             
             if (!File.Exists(pathString))
             {
                 // Create a file to write to. 
-                File.WriteAllText(pathString, "Start Test\n\r");
+                File.WriteAllText(pathString, ("Start Test"+ Environment.NewLine));
             }
             InitializeComponent();
             client = new masterTCPClient(); 
@@ -162,10 +162,10 @@ namespace FormBasedTCPListenMaster
             dataToSend[1] = 1;
             dataToSend[2] = 1;
             bool unitTestCompleted = false;  
-
-            Stopwatch stopWatch = new Stopwatch();
+            int iterations = 25;
+            Stopwatch stopWatch = new Stopwatch(); 
             stopWatch.Start(); 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < iterations; i++)
             {  
                 string testStatus = "Queue Empty" + Environment.NewLine; 
                 List<byte> dnpPkt = new List<byte>();
@@ -180,18 +180,16 @@ namespace FormBasedTCPListenMaster
                 buildPkt(ref dnpPkt, (byte)APDU.functionCode.READ);
                 msgBytes = dnpPkt.ToArray();
                 response = await runClientWriteAsync(msgBytes, addr);
-                textBox1.Text += "Sending Read for Test = " + i + Environment.NewLine;
+                textBox1.Text += "Sending Read for Test = " + i + Environment.NewLine; 
                 unitTestDone.WaitOne();
-
+                //Thread.Sleep(2000);
                 unitTestCompleted = unitTestComplete.TryDequeue(out testStatus);
-                if (unitTestCompleted)
+
+                if (String.IsNullOrEmpty(testStatus))
                 {
-                    textBox1.Text += testStatus;
+                    testStatus = "FAIL: Packet Dropped" + Environment.NewLine;
                 }
-                else
-                {
-                    textBox1.Text += "ERROR Recvd NULL Pkt" + Environment.NewLine; 
-                }
+                
 
                 File.AppendAllText(pathString, testStatus);
             }
@@ -203,7 +201,9 @@ namespace FormBasedTCPListenMaster
                 ts.Hours, ts.Minutes, ts.Seconds,
                 ts.Milliseconds / 10);
             textBox1.Text += "Test Run Time:  " + elapsedTime + Environment.NewLine;
-            File.AppendAllText(pathString, (elapsedTime + Environment.NewLine));
+            double averageResponseTime = ((double)(ts.TotalSeconds) / iterations);
+            string responseTime = "Average READ/WRITE Response Time = " + averageResponseTime + Environment.NewLine;
+            File.AppendAllText(pathString, (elapsedTime + Environment.NewLine + responseTime + Environment.NewLine));
             stopWatch.Reset();
                 
         }
